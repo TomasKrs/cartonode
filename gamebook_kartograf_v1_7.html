@@ -760,10 +760,10 @@
 
                     <div class="space-y-1.5 pt-1 border-t" style="border-color: var(--border-color)">
                         <label class="text-[10px] font-bold uppercase tracking-wider opacity-55">Pridať voľbu z tejto strany</label>
-                        <input type="text" id="compass-quick-target" inputmode="numeric" placeholder="Číslo cieľa (napr. 14)"
+                        <input type="text" id="compass-quick-target" inputmode="numeric" placeholder="Jeden cieľ (napr. 14) — nie 14, 8"
                             class="w-full px-3 py-2.5 rounded-xl app-card border text-sm font-extrabold focus:outline-none"
                             onkeydown="if(event.key==='Enter') document.getElementById('compass-quick-note').focus()">
-                        <input type="text" id="compass-quick-note" placeholder="Text voľby (napr. Vyliezť na vežu…)"
+                        <input type="text" id="compass-quick-note" placeholder="Text práve tejto voľby (napr. Vyliezť na vežu…)"
                             class="w-full px-3 py-2.5 rounded-xl app-card border text-sm focus:outline-none"
                             onkeydown="if(event.key==='Enter') handleCompassQuickBranch()">
                         <div class="flex items-center gap-1 flex-wrap">
@@ -777,7 +777,7 @@
                         <button type="button" onclick="handleCompassQuickBranch()" class="w-full py-2.5 rounded-xl app-accent-btn font-bold text-sm flex items-center justify-center gap-2">
                             <i class="fa-solid fa-plus"></i> Pridať voľbu (zostaň tu)
                         </button>
-                        <p class="text-[10px] opacity-50 leading-snug">Pridáš cieľ + text naraz. Ďalšiu voľbu pridaj rovnako — nemusíš ísť do atlasu ani otvárať spojnicu.</p>
+                        <p class="text-[10px] opacity-50 leading-snug">Vždy jedna voľba = jeden cieľ + jej text. Potom hneď ďalšiu. Pri už existujúcej strane sa text doplní do spojnice (nevznikne prázdna druhá čiara).</p>
                     </div>
                 </div>
             </div>
@@ -2125,10 +2125,28 @@
                     }
                 }
 
-                const duplicateExactEdge = book.edges.find(e => e.from === selectedNodeId && e.to === targetId && (e.note || '') === edgeNote);
-                if (!duplicateExactEdge) {
+                // Upsert: ak už existuje prázdna spojnica na ten istý cieľ, doplň text
+                // (inak vznikajú 2 čiary / jedna s textom a druhá prázdna – typicky pri existujúcej strane)
+                const edgesToTarget = book.edges.filter(e => e.from === selectedNodeId && e.to === targetId);
+                const exactDup = edgesToTarget.find(e => (e.note || '') === edgeNote);
+                const emptyEdge = edgesToTarget.find(e => !(e.note || '').trim());
+
+                if (exactDup) {
+                    if (quickEdgeTag) exactDup.tag = quickEdgeTag;
+                    if (chosenDir) exactDup.direction = chosenDir;
+                    exactDup.updatedAt = Date.now();
+                } else if (edgeNote && emptyEdge) {
+                    emptyEdge.note = edgeNote;
+                    if (quickEdgeTag) emptyEdge.tag = quickEdgeTag;
+                    if (chosenDir) emptyEdge.direction = chosenDir;
+                    if (alreadyExists && !emptyEdge.color) emptyEdge.color = '#a855f7';
+                    emptyEdge.updatedAt = Date.now();
+                } else if (!edgeNote && edgesToTarget.length > 0) {
+                    // Nepridávaj ďalšiu prázdnu paralelnú spojnicu na ten istý cieľ
+                    if (quickEdgeTag && emptyEdge) emptyEdge.tag = quickEdgeTag;
+                } else {
                     book.edges.push({
-                        id: 'edge_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                        id: 'edge_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).slice(2, 6),
                         from: selectedNodeId,
                         to: targetId,
                         note: edgeNote,
@@ -3614,8 +3632,16 @@
                 return;
             }
 
-            // Jedna voľba naraz s textom (čiarky = viac cieľov s rovnakým textom — zriedka)
-            document.getElementById('quick-target-input').value = raw;
+            // V Kartách vždy len 1 cieľ naraz (každá voľba má vlastný text)
+            const parts = raw.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+            if (parts.length > 1) {
+                showToast('Pridávaj po jednej voľbe: najprv cieľ + text, potom ďalšiu', 'warning');
+                document.getElementById('compass-quick-target').value = parts[0];
+                document.getElementById('compass-quick-target').focus();
+                return;
+            }
+
+            document.getElementById('quick-target-input').value = parts[0];
             document.getElementById('quick-edge-note-input').value = note;
             quickEdgeTag = compassEdgeTag;
             quickNodeType = compassNodeType;
@@ -3745,7 +3771,8 @@
                     const stripStyle = edgeTint
                         ? `border-left: 4px solid ${edgeTint};`
                         : '';
-                    const choiceText = e.note || dest?.note || 'Bez textu voľby';
+                    // Len text spojnice (nie poznámka cieľovej strany) – inak sa texty „premiešajú“
+                    const choiceText = (e.note || '').trim() || 'Bez textu voľby';
                     return `
                         <div class="compass-choice-btn w-full rounded-2xl app-card border overflow-hidden flex" style="${stripStyle}">
                             <button type="button" onclick="visitNodeInRun('${e.to}', true)" class="flex-1 min-w-0 p-3.5 text-left flex items-center justify-between gap-2 hover:opacity-90">
@@ -3771,7 +3798,8 @@
             document.getElementById('hud-current-page').textContent = hereId;
             const gotoHint = document.getElementById('compass-goto-page');
             if (gotoHint && document.activeElement !== gotoHint) {
-                gotoHint.placeholder = `Teraz ${hereId} · iné číslo = Ísť sem`;
+                gotoHint.value = '';
+                gotoHint.placeholder = `Skok na inú stranu (teraz si na ${hereId})`;
             }
         }
 
