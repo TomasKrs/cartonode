@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gamebook Kartograf v2.4</title>
+    <title>Gamebook Kartograf v2.5</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -286,11 +286,29 @@
             display: none;
             transform: translate(-50%, -100%);
             pointer-events: auto;
+            max-width: calc(100vw - 16px);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
         }
 
         #node-action-bar.visible,
         #edge-action-bar.visible {
             display: flex;
+        }
+
+        @media (max-width: 480px) {
+            #node-action-bar button span,
+            #edge-action-bar button span {
+                display: none;
+            }
+            #node-action-bar button,
+            #edge-action-bar button {
+                padding-left: 0.65rem;
+                padding-right: 0.65rem;
+                min-width: 2.5rem;
+                justify-content: center;
+            }
         }
 
         #drawer-backdrop {
@@ -307,15 +325,20 @@
             outline-offset: 2px;
         }
 
-        /* Reading loop: v Kartách schovať zbytočný 2. riadok footera (smer/typ) – vetvenie je priamo v karte */
+        /* Reading loop: v Kartách je zápis len v karte – skryť celý footer vetvenia (bez duplicity) */
+        body.view-compass #footer-branch-row-1,
         body.view-compass #footer-branch-row-2 {
-            display: none;
+            display: none !important;
         }
 
-        body.view-compass #footer-branch-row-1 {
-            max-width: 40rem;
-            margin-left: auto;
-            margin-right: auto;
+        body.view-compass footer {
+            padding-top: 0.35rem;
+            padding-bottom: 0.35rem;
+        }
+
+        body.view-compass footer:not(:has(#terminal-node-banner:not(.hidden))):not(:has(#connect-mode-banner.visible)) {
+            /* keď nie sú bannery, footer môže byť takmer prázdny – stlačiť */
+            min-height: 0;
         }
 
         .compass-choice-btn {
@@ -711,32 +734,50 @@
                     </div>
                 </div>
 
-                <!-- VOĽBY (veľké ťukacie ciele) -->
+                <!-- VOĽBY (čítanie) -->
                 <div class="app-surface border rounded-2xl p-3 sm:p-4 space-y-2.5">
                     <div class="text-[11px] font-bold uppercase tracking-wider opacity-60 flex items-center gap-1.5">
-                        <i class="fa-solid fa-signs-post"></i> Kam ďalej? · ťukni voľbu
+                        <i class="fa-solid fa-signs-post"></i> Kam ďalej? · ťukni voľbu (čítanie)
                     </div>
-                    <div id="compass-outgoing-list" class="grid grid-cols-1 lg:grid-cols-2 gap-2"></div>
+                    <div id="compass-outgoing-list" class="grid grid-cols-1 gap-2"></div>
                 </div>
 
-                <!-- Rýchle mapovanie bez odchodu z Kariet -->
-                <div class="app-surface border rounded-2xl p-3 space-y-2">
-                    <div class="text-[11px] font-bold uppercase tracking-wider opacity-60">Nová odbočka (mapovanie)</div>
-                    <div class="flex items-center gap-1.5">
-                        <input type="text" id="compass-quick-target" inputmode="numeric" placeholder="Číslo strany (napr. 82)"
-                            class="flex-1 min-w-0 px-3 py-2.5 rounded-xl app-card border text-sm font-bold focus:outline-none"
-                            onkeydown="if(event.key==='Enter') handleCompassQuickBranch()">
-                        <button type="button" onclick="handleCompassQuickBranch()" class="px-4 py-2.5 rounded-xl app-accent-btn font-bold text-sm shrink-0">
-                            Vetviť
-                        </button>
+                <!-- Mapovanie priamo v Kartách: ísť na stranu + pridať voľbu s textom -->
+                <div class="app-surface border rounded-2xl p-3 space-y-3">
+                    <div class="text-[11px] font-bold uppercase tracking-wider opacity-60">Mapovanie · bez prepínania na atlas</div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold uppercase tracking-wider opacity-55">Som na strane (knihy)</label>
+                        <div class="flex items-center gap-1.5">
+                            <input type="text" id="compass-goto-page" inputmode="numeric" placeholder="Napr. 6"
+                                class="flex-1 min-w-0 px-3 py-2.5 rounded-xl app-card border text-sm font-extrabold focus:outline-none"
+                                onkeydown="if(event.key==='Enter') compassGoToPage()">
+                            <button type="button" onclick="compassGoToPage()" class="px-3.5 py-2.5 rounded-xl app-card border font-bold text-sm shrink-0" title="Nastav „Tu som“ na túto stranu (vytvorí ju, ak chýba)">
+                                Ísť sem
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-1 flex-wrap">
-                        <button type="button" onclick="toggleCompassEdgeTag('item')" data-cetag="item" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">🔑</button>
-                        <button type="button" onclick="toggleCompassEdgeTag('dice')" data-cetag="dice" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">🎲</button>
-                        <button type="button" onclick="toggleCompassEdgeTag('combat')" data-cetag="combat" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">⚔️</button>
-                        <button type="button" onclick="toggleCompassNodeType('death')" data-cntype="death" class="compass-ntype-btn px-2 py-1 rounded-lg app-card border text-[11px]">💀</button>
-                        <button type="button" onclick="toggleCompassNodeType('win')" data-cntype="win" class="compass-ntype-btn px-2 py-1 rounded-lg app-card border text-[11px]">🏆</button>
-                        <span class="text-[10px] opacity-50 ml-1">voliteľný štítok / typ cieľa</span>
+
+                    <div class="space-y-1.5 pt-1 border-t" style="border-color: var(--border-color)">
+                        <label class="text-[10px] font-bold uppercase tracking-wider opacity-55">Pridať voľbu z tejto strany</label>
+                        <input type="text" id="compass-quick-target" inputmode="numeric" placeholder="Číslo cieľa (napr. 14)"
+                            class="w-full px-3 py-2.5 rounded-xl app-card border text-sm font-extrabold focus:outline-none"
+                            onkeydown="if(event.key==='Enter') document.getElementById('compass-quick-note').focus()">
+                        <input type="text" id="compass-quick-note" placeholder="Text voľby (napr. Vyliezť na vežu…)"
+                            class="w-full px-3 py-2.5 rounded-xl app-card border text-sm focus:outline-none"
+                            onkeydown="if(event.key==='Enter') handleCompassQuickBranch()">
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <button type="button" onclick="toggleCompassEdgeTag('item')" data-cetag="item" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">🔑</button>
+                            <button type="button" onclick="toggleCompassEdgeTag('dice')" data-cetag="dice" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">🎲</button>
+                            <button type="button" onclick="toggleCompassEdgeTag('combat')" data-cetag="combat" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">⚔️</button>
+                            <button type="button" onclick="toggleCompassNodeType('death')" data-cntype="death" class="compass-ntype-btn px-2 py-1 rounded-lg app-card border text-[11px]">💀</button>
+                            <button type="button" onclick="toggleCompassNodeType('win')" data-cntype="win" class="compass-ntype-btn px-2 py-1 rounded-lg app-card border text-[11px]">🏆</button>
+                            <span class="text-[10px] opacity-45">voliteľné</span>
+                        </div>
+                        <button type="button" onclick="handleCompassQuickBranch()" class="w-full py-2.5 rounded-xl app-accent-btn font-bold text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Pridať voľbu (zostaň tu)
+                        </button>
+                        <p class="text-[10px] opacity-50 leading-snug">Pridáš cieľ + text naraz. Ďalšiu voľbu pridaj rovnako — nemusíš ísť do atlasu ani otvárať spojnicu.</p>
                     </div>
                 </div>
             </div>
@@ -1404,7 +1445,7 @@
 
     <script>
         /**
-         * GAMEBOOK KARTOGRAF v2.4
+         * GAMEBOOK KARTOGRAF v2.5
          * Kompletná single-file aplikácia – Karty = reading loop (mobile), Mapa = atlas (PC).
          */
 
@@ -2003,9 +2044,10 @@
             });
         }
 
-        function handleQuickBranchSubmit() {
+        function handleQuickBranchSubmit(opts = {}) {
             const book = getActiveBook();
             if (!book) return;
+            const stayOnSource = opts.stayOnSource === true;
 
             const rawTargets = document.getElementById('quick-target-input').value.trim();
             const edgeNote = document.getElementById('quick-edge-note-input').value.trim();
@@ -2032,15 +2074,21 @@
 
             const uniqueTargets = [...new Set(targets)];
             const sourceNode = book.nodes[selectedNodeId];
+            if (!sourceNode) {
+                showToast('Najprv nastav stranu, z ktorej vetvíš', 'warning');
+                return;
+            }
             const today = formatTodayDate();
-            let lastCreatedId = null;
             let cycleLinkedCount = 0;
 
             uniqueTargets.forEach((targetId, idx) => {
                 const alreadyExists = Boolean(book.nodes[targetId]);
-                const chosenDir = uniqueTargets.length === 1 ? quickDirection : '';
+                const chosenDir = (!stayOnSource && uniqueTargets.length === 1) ? quickDirection : '';
                 const dirInfo = chosenDir ? COMPASS_DIR_META[chosenDir] : null;
-                const assignedStatus = uniqueTargets.length > 1 ? 'ghost' : (quickNodeType || 'normal');
+                // Pri mapovaní v Kartách (stay) aj jedna voľba môže byť ghost, ak nie je typ
+                const assignedStatus = (stayOnSource || uniqueTargets.length > 1)
+                    ? (quickNodeType || 'ghost')
+                    : (quickNodeType || 'normal');
                 const enforcedIcon = TERMINAL_STATUS_CONFIG[assignedStatus]?.icon || '';
 
                 if (!alreadyExists) {
@@ -2057,13 +2105,12 @@
                         color: '',
                         icon: enforcedIcon,
                         note: '',
-                        firstVisited: uniqueTargets.length > 1 ? null : today,
-                        visits: uniqueTargets.length > 1 ? [] : [today],
+                        firstVisited: (!stayOnSource && uniqueTargets.length === 1) ? today : null,
+                        visits: (!stayOnSource && uniqueTargets.length === 1) ? [today] : [],
                         pinned: Boolean(chosenDir),
                         compassLocked: Boolean(chosenDir),
                         updatedAt: Date.now()
                     };
-                    lastCreatedId = targetId;
                 } else {
                     cycleLinkedCount++;
                     if (chosenDir) {
@@ -2100,9 +2147,21 @@
             quickEdgeTag = '';
             document.querySelectorAll('.quick-dir-btn, .quick-type-btn, .quick-etag-btn').forEach(b => b.classList.remove('app-accent-btn'));
 
+            if (book.nodes[selectedNodeId]) book.nodes[selectedNodeId].updatedAt = Date.now();
+
+            // Karty / mapovanie: zostaň na zdrojovej strane (môžeš hneď pridať ďalšiu voľbu)
+            if (stayOnSource) {
+                saveAppData();
+                refreshAllUI();
+                const label = edgeNote
+                    ? `Voľba → ${uniqueTargets.join(', ')} („${edgeNote.slice(0, 28)}${edgeNote.length > 28 ? '…' : ''}“)`
+                    : `Voľba → ${uniqueTargets.join(', ')} (zostávaš na ${selectedNodeId})`;
+                showToast(label);
+                return;
+            }
+
             if (uniqueTargets.length === 1) {
                 const destId = uniqueTargets[0];
-                if (book.nodes[selectedNodeId]) book.nodes[selectedNodeId].updatedAt = Date.now();
                 visitNodeInRun(destId, true);
                 if (cycleLinkedCount > 0) {
                     showToast(`Prepojené s existujúcou stranou ${destId} (návrat / cyklus)`);
@@ -2112,7 +2171,6 @@
                 return;
             }
 
-            if (book.nodes[selectedNodeId]) book.nodes[selectedNodeId].updatedAt = Date.now();
             saveAppData();
             refreshAllUI();
             showToast(`Pridaných ${uniqueTargets.length} odbočiek (ťukni uzol → „Tu som“)`);
@@ -2348,13 +2406,22 @@
 
         function positionFloatingBar(bar, clientX, clientY, approxW) {
             const pad = 8;
+            const maxW = Math.max(120, window.innerWidth - pad * 2);
+            const useW = Math.min(approxW, maxW);
             let x = clientX;
             let y = clientY;
-            x = Math.min(window.innerWidth - approxW / 2 - pad, Math.max(approxW / 2 + pad, x));
-            y = Math.max(72, y - 28);
+            x = Math.min(window.innerWidth - useW / 2 - pad, Math.max(useW / 2 + pad, x));
+            y = Math.max(72, Math.min(window.innerHeight - 56, y - 28));
             bar.style.left = x + 'px';
             bar.style.top = y + 'px';
             bar.classList.add('visible');
+            // Po zobrazení doladiť podľa skutočnej šírky (mobil)
+            requestAnimationFrame(() => {
+                const w = Math.min(bar.offsetWidth || useW, maxW);
+                let nx = Number.parseFloat(bar.style.left) || x;
+                nx = Math.min(window.innerWidth - w / 2 - pad, Math.max(w / 2 + pad, nx));
+                bar.style.left = nx + 'px';
+            });
         }
 
         function showNodeActionBar(nodeId, clientX, clientY) {
@@ -2375,7 +2442,7 @@
                 y = rect.top + camera.y + node.y * camera.scale;
             }
 
-            positionFloatingBar(bar, x, y, 400);
+            positionFloatingBar(bar, x, y, Math.min(400, window.innerWidth - 16));
         }
 
         function hideNodeActionBar() {
@@ -3489,6 +3556,48 @@
             });
         }
 
+        function compassGoToPage() {
+            const book = getActiveBook();
+            if (!book) return;
+            const pageId = (document.getElementById('compass-goto-page')?.value || '').trim();
+            if (!pageId) {
+                showToast('Zadaj číslo strany z knihy', 'warning');
+                return;
+            }
+            if (pageId === (book.currentNodeId || selectedNodeId)) {
+                showToast(`Už si na strane ${pageId}`);
+                document.getElementById('compass-goto-page').value = '';
+                return;
+            }
+
+            if (!book.nodes[pageId]) {
+                pushHistory('Nová strana (Karty)');
+                const here = book.nodes[book.currentNodeId || selectedNodeId];
+                const today = formatTodayDate();
+                book.nodes[pageId] = {
+                    id: pageId,
+                    x: Math.round((here?.x || 200) + 90),
+                    y: Math.round((here?.y || 160) + 130),
+                    status: 'normal',
+                    color: '',
+                    icon: '',
+                    note: '',
+                    firstVisited: today,
+                    visits: [today],
+                    pinned: false,
+                    compassLocked: false,
+                    updatedAt: Date.now()
+                };
+            }
+
+            document.getElementById('compass-goto-page').value = '';
+            visitNodeInRun(pageId, true);
+            if (currentViewMode !== 'compass') setViewMode('compass');
+            else renderCompassCards();
+            showToast(`Tu som: strana ${pageId} — môžeš pridávať voľby`);
+            requestAnimationFrame(() => document.getElementById('compass-quick-target')?.focus());
+        }
+
         function handleCompassQuickBranch() {
             const book = getActiveBook();
             if (!book) return;
@@ -3496,14 +3605,18 @@
             if (!book.nodes[hereId]) return;
 
             selectedNodeId = hereId;
+            book.currentNodeId = hereId;
+
             const raw = document.getElementById('compass-quick-target').value.trim();
+            const note = (document.getElementById('compass-quick-note')?.value || '').trim();
             if (!raw) {
-                showToast('Zadaj číslo strany', 'warning');
+                showToast('Zadaj číslo cieľovej strany', 'warning');
                 return;
             }
 
-            // Zdieľaná rýchla vetva footera – synchronizuj štítky a cieľ
+            // Jedna voľba naraz s textom (čiarky = viac cieľov s rovnakým textom — zriedka)
             document.getElementById('quick-target-input').value = raw;
+            document.getElementById('quick-edge-note-input').value = note;
             quickEdgeTag = compassEdgeTag;
             quickNodeType = compassNodeType;
             document.querySelectorAll('.quick-etag-btn').forEach(b => {
@@ -3513,16 +3626,17 @@
                 b.classList.toggle('app-accent-btn', b.dataset.qtype === quickNodeType);
             });
 
-            handleQuickBranchSubmit();
-            // Po úspechu footer vyprázdni cieľ – vtedy vyčisti aj kartu
-            if (!document.getElementById('quick-target-input').value.trim()) {
-                document.getElementById('compass-quick-target').value = '';
-                compassEdgeTag = '';
-                compassNodeType = '';
-                document.querySelectorAll('.compass-etag-btn, .compass-ntype-btn').forEach(b => b.classList.remove('app-accent-btn'));
-            }
+            handleQuickBranchSubmit({ stayOnSource: true });
+
+            document.getElementById('compass-quick-target').value = '';
+            if (document.getElementById('compass-quick-note')) document.getElementById('compass-quick-note').value = '';
+            compassEdgeTag = '';
+            compassNodeType = '';
+            document.querySelectorAll('.compass-etag-btn, .compass-ntype-btn').forEach(b => b.classList.remove('app-accent-btn'));
+
             if (currentViewMode !== 'compass') setViewMode('compass');
             else renderCompassCards();
+            requestAnimationFrame(() => document.getElementById('compass-quick-target')?.focus());
         }
 
         function renderCompassRpgStrip() {
@@ -3622,7 +3736,7 @@
             if (termBox) termBox.classList.toggle('hidden', !isTerminalStatus(node.status));
 
             document.getElementById('compass-outgoing-list').innerHTML = outgoing.length === 0
-                ? `<p class="text-xs opacity-60 italic col-span-full px-1">${isTerminalStatus(node.status) ? 'Dej je tu uzavretý. Začni nový pokus alebo choď krok späť.' : 'Zatiaľ žiadne voľby — pridaj odbočku dole (mapovanie).'}</p>`
+                ? `<p class="text-xs opacity-60 italic col-span-full px-1">${isTerminalStatus(node.status) ? 'Dej je tu uzavretý. Začni nový pokus alebo choď krok späť.' : 'Zatiaľ žiadne voľby — dole pridaj cieľ + text voľby.'}</p>`
                 : outgoing.map(e => {
                     const dest = book.nodes[e.to];
                     const isGhost = dest?.status === 'ghost';
@@ -3631,24 +3745,34 @@
                     const stripStyle = edgeTint
                         ? `border-left: 4px solid ${edgeTint};`
                         : '';
+                    const choiceText = e.note || dest?.note || 'Bez textu voľby';
                     return `
-                        <button onclick="visitNodeInRun('${e.to}', true)" class="compass-choice-btn w-full p-3.5 rounded-2xl app-card border text-left flex items-center justify-between gap-2 hover:opacity-90 overflow-hidden" style="${stripStyle}">
-                            <div class="min-w-0">
-                                <div class="font-extrabold text-base flex items-center gap-2 flex-wrap">
-                                    <span>→ ${e.to}</span>
-                                    ${tagIcon ? `<span class="text-sm">${tagIcon}</span>` : ''}
-                                    ${e.direction ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-bold">${COMPASS_DIR_META[e.direction]?.label}</span>` : ''}
-                                    ${isGhost ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Nové</span>' : ''}
+                        <div class="compass-choice-btn w-full rounded-2xl app-card border overflow-hidden flex" style="${stripStyle}">
+                            <button type="button" onclick="visitNodeInRun('${e.to}', true)" class="flex-1 min-w-0 p-3.5 text-left flex items-center justify-between gap-2 hover:opacity-90">
+                                <div class="min-w-0">
+                                    <div class="font-extrabold text-base flex items-center gap-2 flex-wrap">
+                                        <span>→ ${e.to}</span>
+                                        ${tagIcon ? `<span class="text-sm">${tagIcon}</span>` : ''}
+                                        ${e.direction ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-bold">${COMPASS_DIR_META[e.direction]?.label}</span>` : ''}
+                                        ${isGhost ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Nové</span>' : ''}
+                                    </div>
+                                    <div class="text-xs sm:text-sm opacity-75 mt-1 leading-snug">${escapeHtml(choiceText)}</div>
                                 </div>
-                                <div class="text-xs sm:text-sm opacity-75 mt-1 leading-snug">${e.note ? escapeHtml(e.note) : (dest?.note ? escapeHtml(dest.note) : 'Pokračovať')}</div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right opacity-50 shrink-0 text-lg"></i>
-                        </button>
+                                <i class="fa-solid fa-chevron-right opacity-50 shrink-0 text-lg"></i>
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); openEdgeDetailModal('${e.id}')" class="shrink-0 px-3 border-l flex items-center justify-center opacity-80 hover:opacity-100" style="border-color: var(--border-color)" title="Upraviť text / farbu voľby">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                        </div>
                     `;
                 }).join('');
 
             document.getElementById('footer-active-id').textContent = hereId;
             document.getElementById('hud-current-page').textContent = hereId;
+            const gotoHint = document.getElementById('compass-goto-page');
+            if (gotoHint && document.activeElement !== gotoHint) {
+                gotoHint.placeholder = `Teraz ${hereId} · iné číslo = Ísť sem`;
+            }
         }
 
         // ==========================================
@@ -4096,7 +4220,8 @@
             edge.note = val;
             edge.updatedAt = Date.now();
             saveAppData();
-            renderGraph();
+            if (currentViewMode === 'compass') renderCompassCards();
+            else if (currentViewMode === 'tree' || currentViewMode === 'web') renderGraph();
         }
 
         function setSelectedEdgeTag(tag) {
