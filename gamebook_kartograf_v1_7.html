@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gamebook Kartograf v2.5</title>
+    <title>Gamebook Kartograf v2.6</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -1445,7 +1445,7 @@
 
     <script>
         /**
-         * GAMEBOOK KARTOGRAF v2.5
+         * GAMEBOOK KARTOGRAF v2.6
          * Kompletná single-file aplikácia – Karty = reading loop (mobile), Mapa = atlas (PC).
          */
 
@@ -2679,59 +2679,54 @@
                 const endX = toNode.x - ux * (rTo + 4) + px * 0.35;
                 const endY = toNode.y - uy * (rTo + 4) + py * 0.35;
 
-                let d = '';
-                // Popisky bližšie k východisku + striedanie strán; neskôr anti-kolízia
-                const labelSide = fanSpread === 0 ? ((edgeOrdinal % 2 === 0) ? 1 : -1) : (fanSpread >= 0 ? 1 : -1);
-                const alongT = 0.28 + Math.min(0.22, edgeOrdinal * 0.06);
-                let labelX = startX + (endX - startX) * alongT;
-                let labelY = startY + (endY - startY) * alongT;
-                const perpPush = 22 + Math.min(16, Math.abs(perpOffset));
-                // Spoločný oblúk pre súrodencov (aj bežné forward hrany)
+                // Spoločný oblúk pre súrodencov; popisok = bod NA krivke blízko východiska
                 const fanCurve = outCount > 1 ? fanSpread * 1.35 : 0;
+                let c1x = startX, c1y = startY, c2x = endX, c2y = endY;
+                let d = '';
 
                 if (isCycleEdge || isCrossEdge) {
-                    // Bočný oblúk: fialový = skutočný návrat k predkovi, tyrkysový = skok na existujúcu stranu
                     const sideBase = treeOrientation === 'horizontal'
                         ? (fromNode.y >= toNode.y ? 1 : -1) * Math.max(85, Math.abs(dx) * 0.4)
                         : (fromNode.x >= toNode.x ? 1 : -1) * Math.max(100, Math.abs(dy) * 0.5);
                     const side = sideBase + fanCurve * 0.85;
                     if (treeOrientation === 'horizontal') {
-                        d = `M ${startX} ${startY} C ${startX + 40} ${startY + side}, ${endX - 40} ${endY + side}, ${endX} ${endY}`;
-                        labelX = startX + (endX - startX) * alongT;
-                        labelY = startY + (endY - startY) * alongT + side * 0.38;
+                        c1x = startX + 40; c1y = startY + side;
+                        c2x = endX - 40; c2y = endY + side;
                     } else {
-                        d = `M ${startX} ${startY} C ${startX + side} ${startY + 40}, ${endX + side} ${endY - 40}, ${endX} ${endY}`;
-                        labelX = startX + (endX - startX) * alongT + side * 0.48;
-                        labelY = startY + (endY - startY) * alongT;
+                        c1x = startX + side; c1y = startY + 40;
+                        c2x = endX + side; c2y = endY - 40;
                     }
+                    d = `M ${startX} ${startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endX} ${endY}`;
                 } else if (currentViewMode === 'tree' && !edge.direction) {
                     if (treeOrientation === 'horizontal') {
                         const midX = (startX + endX) / 2;
-                        const yBend = fanCurve;
-                        d = `M ${startX} ${startY} C ${midX} ${startY + yBend}, ${midX} ${endY + yBend * 0.25}, ${endX} ${endY}`;
-                        labelX = startX + (midX - startX) * 0.7;
-                        labelY = startY + yBend * 0.55 + labelSide * (12 + Math.abs(fanSpread) * 0.15);
+                        c1x = midX; c1y = startY + fanCurve;
+                        c2x = midX; c2y = endY + fanCurve * 0.25;
                     } else {
                         const midY = (startY + endY) / 2;
-                        const xBend = fanCurve;
-                        d = `M ${startX} ${startY} C ${startX + xBend} ${midY}, ${endX + xBend * 0.25} ${midY}, ${endX} ${endY}`;
-                        labelX = startX + xBend * 0.55 + labelSide * Math.max(10, perpPush * 0.35);
-                        labelY = startY + (midY - startY) * 0.65;
+                        c1x = startX + fanCurve; c1y = midY;
+                        c2x = endX + fanCurve * 0.25; c2y = midY;
                     }
-                } else if (outCount > 1) {
-                    // Sieť / smerové hrany: jemný fan-out oblúk namiesto priamky
-                    const c1x = startX + ux * dist * 0.35 + (-uy) * fanCurve;
-                    const c1y = startY + uy * dist * 0.35 + ux * fanCurve;
-                    const c2x = startX + ux * dist * 0.7 + (-uy) * fanCurve * 0.3;
-                    const c2y = startY + uy * dist * 0.7 + ux * fanCurve * 0.3;
                     d = `M ${startX} ${startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endX} ${endY}`;
-                    labelX += (-uy) * perpPush * labelSide;
-                    labelY += ux * perpPush * labelSide;
+                } else if (outCount > 1) {
+                    c1x = startX + ux * dist * 0.35 + (-uy) * fanCurve;
+                    c1y = startY + uy * dist * 0.35 + ux * fanCurve;
+                    c2x = startX + ux * dist * 0.7 + (-uy) * fanCurve * 0.3;
+                    c2y = startY + uy * dist * 0.7 + ux * fanCurve * 0.3;
+                    d = `M ${startX} ${startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endX} ${endY}`;
                 } else {
+                    c1x = startX + (endX - startX) / 3;
+                    c1y = startY + (endY - startY) / 3;
+                    c2x = startX + 2 * (endX - startX) / 3;
+                    c2y = startY + 2 * (endY - startY) / 3;
                     d = `M ${startX} ${startY} L ${endX} ${endY}`;
-                    labelX += (-uy) * perpPush * labelSide;
-                    labelY += ux * perpPush * labelSide;
                 }
+
+                // Popisok sedí na krivke hneď za uzlom (nie „vedľa“ cudzej cesty)
+                const labelT = 0.22 + Math.min(0.12, edgeOrdinal * 0.04);
+                let labelPt = pointOnCubic(startX, startY, c1x, c1y, c2x, c2y, endX, endY, labelT);
+                let labelX = labelPt.x;
+                let labelY = labelPt.y;
 
                 const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 g.style.cursor = 'pointer';
@@ -2771,9 +2766,10 @@
                     const boxW = Math.max(18, shortText.length * 5.2 + 10);
                     const boxH = 15;
 
-                    // Anti-kolízia: posuň kolmo na hranu, ak už niečo leží na tom istom mieste
+                    // Anti-kolízia: posuň ĎALEJ PO KRIVKE (ostane na svojej ceste), nie bokom na cudziu
                     let lx = labelX;
                     let ly = labelY;
+                    let tTry = labelT;
                     for (let attempt = 0; attempt < 10; attempt++) {
                         const box = { x: lx - boxW / 2, y: ly - boxH / 2, w: boxW, h: boxH };
                         const hit = placedEdgeLabels.some(p =>
@@ -2784,8 +2780,10 @@
                             placedEdgeLabels.push(box);
                             break;
                         }
-                        lx += (-uy) * 11 * labelSide;
-                        ly += ux * 11 * labelSide;
+                        tTry = Math.min(0.72, tTry + 0.08);
+                        const np = pointOnCubic(startX, startY, c1x, c1y, c2x, c2y, endX, endY, tTry);
+                        lx = np.x;
+                        ly = np.y;
                     }
 
                     const lblRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -2948,6 +2946,18 @@
             applyCameraTransform();
         }
 
+        function pointOnCubic(x0, y0, x1, y1, x2, y2, x3, y3, t) {
+            const u = 1 - t;
+            const tt = t * t;
+            const uu = u * u;
+            return {
+                x: uu * u * x0 + 3 * uu * t * x1 + 3 * u * tt * x2 + tt * t * x3,
+                y: uu * u * y0 + 3 * uu * t * y1 + 3 * u * tt * y2 + tt * t * y3
+            };
+        }
+
+        let nodeTapMemory = { id: null, at: 0 };
+
         function attachNodeDragHandlers(groupEl, nodeId) {
             let dragging = false;
             let activePid = null;
@@ -3007,8 +3017,19 @@
                 try { groupEl.releasePointerCapture(e.pointerId); } catch (_) {}
 
                 if (movedDist <= 6) {
-                    handleNodeTap(nodeId, e.clientX, e.clientY);
+                    const now = Date.now();
+                    // 1× ťuk = menu, 2× ťuk/klik = editácia strany
+                    if (nodeTapMemory.id === nodeId && (now - nodeTapMemory.at) < 380) {
+                        nodeTapMemory = { id: null, at: 0 };
+                        hideNodeActionBar();
+                        selectedNodeId = nodeId;
+                        openNodeDetailModal(nodeId);
+                    } else {
+                        nodeTapMemory = { id: nodeId, at: now };
+                        handleNodeTap(nodeId, e.clientX, e.clientY);
+                    }
                 } else {
+                    nodeTapMemory = { id: null, at: 0 };
                     const book = getActiveBook();
                     if (book?.nodes[nodeId]) book.nodes[nodeId].updatedAt = Date.now();
                     saveAppData();
@@ -3018,6 +3039,15 @@
 
             groupEl.addEventListener('pointerup', finishDrag);
             groupEl.addEventListener('pointercancel', finishDrag);
+
+            groupEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                nodeTapMemory = { id: null, at: 0 };
+                hideNodeActionBar();
+                selectedNodeId = nodeId;
+                openNodeDetailModal(nodeId);
+            });
         }
 
         function updateConnectedEdgesDOM(movedNodeId) {
