@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gamebook Kartograf v2.6</title>
+    <title>Gamebook Kartograf v2.7</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -588,9 +588,12 @@
                 </div>
 
                 <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                    <button onclick="toggleFocusMode()" id="btn-focus-mode" class="px-2 py-1 rounded-lg font-semibold transition flex items-center gap-1 app-card border" title="Fokus ±3 kroky">
+                    <button onclick="cycleGraphFilter()" id="btn-graph-filter" class="px-2 py-1 rounded-lg font-semibold transition flex items-center gap-1 app-card border" title="Filter hustoty: všetko → fokus → trasa → nepreskúmané">
                         <i class="fa-solid fa-eye"></i>
-                        <span>Fokus</span>
+                        <span id="btn-graph-filter-label">Všetko</span>
+                    </button>
+                    <button onclick="cleanupEmptyParallelEdges()" class="px-2 py-1 rounded-lg font-semibold transition app-card border" title="Zlúčiť prázdne paralelné spojnice">
+                        <i class="fa-solid fa-broom"></i>
                     </button>
                     <div class="flex items-center app-card border rounded-lg px-1.5 py-0.5">
                         <i class="fa-solid fa-magnifying-glass text-[10px] opacity-60 mr-1"></i>
@@ -756,6 +759,7 @@
                                 Ísť sem
                             </button>
                         </div>
+                        <div id="compass-recent-goto" class="flex flex-wrap gap-1"></div>
                     </div>
 
                     <div class="space-y-1.5 pt-1 border-t" style="border-color: var(--border-color)">
@@ -763,6 +767,7 @@
                         <input type="text" id="compass-quick-target" inputmode="numeric" placeholder="Jeden cieľ (napr. 14) — nie 14, 8"
                             class="w-full px-3 py-2.5 rounded-xl app-card border text-sm font-extrabold focus:outline-none"
                             onkeydown="if(event.key==='Enter') document.getElementById('compass-quick-note').focus()">
+                        <div id="compass-recent-targets" class="flex flex-wrap gap-1"></div>
                         <input type="text" id="compass-quick-note" placeholder="Text práve tejto voľby (napr. Vyliezť na vežu…)"
                             class="w-full px-3 py-2.5 rounded-xl app-card border text-sm focus:outline-none"
                             onkeydown="if(event.key==='Enter') handleCompassQuickBranch()">
@@ -774,10 +779,15 @@
                             <button type="button" onclick="toggleCompassNodeType('win')" data-cntype="win" class="compass-ntype-btn px-2 py-1 rounded-lg app-card border text-[11px]">🏆</button>
                             <span class="text-[10px] opacity-45">voliteľné</span>
                         </div>
-                        <button type="button" onclick="handleCompassQuickBranch()" class="w-full py-2.5 rounded-xl app-accent-btn font-bold text-sm flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-plus"></i> Pridať voľbu (zostaň tu)
-                        </button>
-                        <p class="text-[10px] opacity-50 leading-snug">Vždy jedna voľba = jeden cieľ + jej text. Potom hneď ďalšiu. Pri už existujúcej strane sa text doplní do spojnice (nevznikne prázdna druhá čiara).</p>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <button type="button" onclick="handleCompassQuickBranch()" class="py-2.5 rounded-xl app-accent-btn font-bold text-sm flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Pridať voľbu
+                            </button>
+                            <button type="button" onclick="compassDuplicateLastChoice()" class="py-2.5 rounded-xl app-card border font-bold text-sm flex items-center justify-center gap-1.5" title="Predvyplní posledný cieľ — zmeň text a pridaj">
+                                <i class="fa-solid fa-copy"></i> Duplikuj cieľ
+                            </button>
+                        </div>
+                        <p class="text-[10px] opacity-50 leading-snug">Vždy jedna voľba = jeden cieľ + jej text. Nedávne strany ťukni pre rýchle vyplnenie.</p>
                     </div>
                 </div>
             </div>
@@ -1348,20 +1358,29 @@
                 </div>
             </div>
 
-            <!-- Plná záloha JSON a Tlač -->
-            <div class="grid grid-cols-3 gap-2 text-xs">
-                <button onclick="exportFullBookJSON()" class="py-2.5 px-2 rounded-xl app-card border font-semibold hover:opacity-85 flex flex-col items-center gap-1">
-                    <i class="fa-solid fa-download text-amber-400 text-sm"></i>
-                    <span>Uložiť .JSON</span>
+            <!-- Záloha JSON: kniha / celá knižnica + tlač -->
+            <div class="app-card border rounded-2xl p-3.5 space-y-2.5 text-xs">
+                <span class="font-bold text-xs block">3. Záloha na disk (.JSON)</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportFullBookJSON()" class="py-2.5 px-2 rounded-xl app-surface border font-semibold hover:opacity-85 flex flex-col items-center gap-1">
+                        <i class="fa-solid fa-file-arrow-down text-amber-400 text-sm"></i>
+                        <span>Aktuálna kniha</span>
+                    </button>
+                    <button onclick="exportLibraryJSON()" class="py-2.5 px-2 rounded-xl app-surface border font-semibold hover:opacity-85 flex flex-col items-center gap-1">
+                        <i class="fa-solid fa-boxes-stacked text-violet-400 text-sm"></i>
+                        <span>Celá knižnica</span>
+                    </button>
+                    <label class="py-2.5 px-2 rounded-xl app-surface border font-semibold hover:opacity-85 flex flex-col items-center gap-1 cursor-pointer col-span-2">
+                        <i class="fa-solid fa-file-arrow-up text-emerald-400 text-sm"></i>
+                        <span>Načítať .JSON (kniha alebo knižnica)</span>
+                        <input type="file" accept=".json,application/json" class="hidden" onchange="importAnyKartografJSON(event)">
+                    </label>
+                </div>
+                <button onclick="cleanupEmptyParallelEdges()" class="w-full py-2 rounded-xl app-surface border font-semibold hover:opacity-85">
+                    <i class="fa-solid fa-broom mr-1 text-amber-400"></i> Opraviť prázdne paralelné spojnice
                 </button>
-                <label class="py-2.5 px-2 rounded-xl app-card border font-semibold hover:opacity-85 flex flex-col items-center gap-1 cursor-pointer">
-                    <i class="fa-solid fa-upload text-emerald-400 text-sm"></i>
-                    <span>Načítať .JSON</span>
-                    <input type="file" accept=".json" class="hidden" onchange="importFullBookJSON(event)">
-                </label>
-                <button onclick="triggerPrintAtlas()" class="py-2.5 px-2 rounded-xl app-card border font-semibold hover:opacity-85 flex flex-col items-center gap-1">
-                    <i class="fa-solid fa-print text-sky-400 text-sm"></i>
-                    <span>Vytlačiť atlas</span>
+                <button onclick="triggerPrintAtlas()" class="w-full py-2 rounded-xl app-surface border font-semibold hover:opacity-85">
+                    <i class="fa-solid fa-print mr-1 text-sky-400"></i> Vytlačiť atlas
                 </button>
             </div>
         </div>
@@ -1445,7 +1464,7 @@
 
     <script>
         /**
-         * GAMEBOOK KARTOGRAF v2.6
+         * GAMEBOOK KARTOGRAF v2.7
          * Kompletná single-file aplikácia – Karty = reading loop (mobile), Mapa = atlas (PC).
          */
 
@@ -1514,7 +1533,9 @@
         let treeOrientation = 'vertical'; // 'vertical' | 'horizontal'
         let selectedNodeId = '1';
         let selectedEdgeId = null;
-        let focusModeEnabled = false;
+        let graphFilterMode = 'all'; // 'all' | 'focus' | 'run' | 'unexplored'
+        let recentPageIds = [];
+        let lastCompassChoiceTarget = '';
         let quickDirection = '';
         let quickNodeType = '';
         let quickEdgeTag = '';
@@ -1602,6 +1623,7 @@
             setupSvgPointerAndZoom();
             setupChromeHelpers();
             updateTreeOrientButton();
+            updateGraphFilterButton();
             updateUndoRedoButtons();
 
             // Reading loop: mobil → Karty, PC → Atlas (Strom); vždy rešpektuj poslednú voľbu
@@ -2354,6 +2376,7 @@
             if (updateSelection) {
                 selectedNodeId = nodeId;
                 book.currentNodeId = nodeId;
+                rememberRecentPage(nodeId);
                 saveAppData();
                 refreshAllUI();
             }
@@ -3483,26 +3506,84 @@
         // FOKUS MÓD (±3 KROKY) A HĽADANIE STRANY ALEBO POZNÁMKY
         // ==========================================
 
-        function toggleFocusMode() {
-            focusModeEnabled = !focusModeEnabled;
-            document.getElementById('btn-focus-mode').classList.toggle('app-accent-btn', focusModeEnabled);
+        function rememberRecentPage(pageId) {
+            if (!pageId) return;
+            recentPageIds = [String(pageId), ...recentPageIds.filter(id => id !== String(pageId))].slice(0, 8);
+        }
+
+        function updateGraphFilterButton() {
+            const btn = document.getElementById('btn-graph-filter');
+            const label = document.getElementById('btn-graph-filter-label');
+            if (!btn || !label) return;
+            const meta = {
+                all: { text: 'Všetko', title: 'Celá kniha — ťukni pre Fokus ±3' },
+                focus: { text: 'Fokus', title: 'Fokus ±3 kroky — ťukni pre Trasu pokusu' },
+                run: { text: 'Trasa', title: 'Len aktuálny pokus — ťukni pre Nepreskúmané' },
+                unexplored: { text: 'Nové', title: 'Nepreskúmané (ghost) + ich susedia — ťukni pre Všetko' }
+            };
+            const m = meta[graphFilterMode] || meta.all;
+            label.textContent = m.text;
+            btn.title = m.title;
+            btn.classList.toggle('app-accent-btn', graphFilterMode !== 'all');
+        }
+
+        function cycleGraphFilter() {
+            const order = ['all', 'focus', 'run', 'unexplored'];
+            const i = order.indexOf(graphFilterMode);
+            graphFilterMode = order[(i + 1) % order.length];
+            updateGraphFilterButton();
             renderGraph();
             fitGraphToScreen();
-            showToast(focusModeEnabled ? 'Fokus mód zapnutý (±3 kroky okolo aktuálnej strany)' : 'Zobrazená celá kniha');
+            const msgs = {
+                all: 'Zobrazená celá kniha',
+                focus: 'Fokus ±3 kroky okolo aktuálnej strany',
+                run: 'Len strany aktuálneho pokusu',
+                unexplored: 'Nepreskúmané strany a ich okolie'
+            };
+            showToast(msgs[graphFilterMode] || 'Filter zmenený');
+        }
+
+        function toggleFocusMode() {
+            // spätná kompatibilita starých onclick — prepne fokus ↔ všetko
+            graphFilterMode = graphFilterMode === 'focus' ? 'all' : 'focus';
+            updateGraphFilterButton();
+            renderGraph();
+            fitGraphToScreen();
         }
 
         function getVisibleNodeIds(book) {
             const allIds = new Set(Object.keys(book.nodes));
-            if (!focusModeEnabled || !selectedNodeId || !book.nodes[selectedNodeId]) {
-                return allIds;
+            if (graphFilterMode === 'all' || !book) return allIds;
+
+            if (graphFilterMode === 'run') {
+                const run = book.runs?.[book.activeRunIndex];
+                const path = run?.path?.length ? run.path : [book.currentNodeId || book.startNodeId];
+                return new Set(path.filter(id => book.nodes[id]));
             }
-            const visible = new Set([selectedNodeId]);
-            let frontier = [selectedNodeId];
+
+            if (graphFilterMode === 'unexplored') {
+                const visible = new Set();
+                Object.values(book.nodes).forEach(n => {
+                    if (n.status === 'ghost') visible.add(n.id);
+                });
+                book.edges.forEach(e => {
+                    if (visible.has(e.to) && book.nodes[e.from]) visible.add(e.from);
+                    if (visible.has(e.from) && book.nodes[e.to]) visible.add(e.to);
+                });
+                if (book.currentNodeId && book.nodes[book.currentNodeId]) visible.add(book.currentNodeId);
+                return visible.size ? visible : allIds;
+            }
+
+            // focus ±3 out / ±2 in
+            const anchor = book.currentNodeId || selectedNodeId;
+            if (!anchor || !book.nodes[anchor]) return allIds;
+            const visible = new Set([anchor]);
+            let frontier = [anchor];
             for (let step = 0; step < 3; step++) {
                 const next = [];
                 frontier.forEach(id => {
                     book.edges.filter(e => e.from === id).forEach(e => {
-                        if (!visible.has(e.to)) {
+                        if (!visible.has(e.to) && book.nodes[e.to]) {
                             visible.add(e.to);
                             next.push(e.to);
                         }
@@ -3510,12 +3591,12 @@
                 });
                 frontier = next;
             }
-            frontier = [selectedNodeId];
+            frontier = [anchor];
             for (let step = 0; step < 2; step++) {
                 const prev = [];
                 frontier.forEach(id => {
                     book.edges.filter(e => e.to === id).forEach(e => {
-                        if (!visible.has(e.from)) {
+                        if (!visible.has(e.from) && book.nodes[e.from]) {
                             visible.add(e.from);
                             prev.push(e.from);
                         }
@@ -3524,6 +3605,60 @@
                 frontier = prev;
             }
             return visible;
+        }
+
+        function cleanupEmptyParallelEdges() {
+            const book = getActiveBook();
+            if (!book) return;
+            pushHistory('Oprava prázdnych spojníc');
+
+            const groups = {};
+            book.edges.forEach(e => {
+                const key = e.from + '=>' + e.to;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(e);
+            });
+
+            let removed = 0;
+            const keepIds = new Set(book.edges.map(e => e.id));
+
+            Object.values(groups).forEach(list => {
+                if (list.length < 2) return;
+                const withNote = list.filter(e => (e.note || '').trim());
+                const empty = list.filter(e => !(e.note || '').trim());
+
+                if (withNote.length && empty.length) {
+                    empty.forEach(e => {
+                        if (keepIds.delete(e.id)) removed++;
+                    });
+                } else if (!withNote.length && empty.length > 1) {
+                    empty.slice(1).forEach(e => {
+                        if (keepIds.delete(e.id)) removed++;
+                    });
+                }
+
+                // Rovnaký text voľby 2× na ten istý cieľ → nechať jednu
+                const byNote = {};
+                list.forEach(e => {
+                    if (!keepIds.has(e.id)) return;
+                    const n = (e.note || '').trim();
+                    if (!n) return;
+                    if (byNote[n]) {
+                        if (keepIds.delete(e.id)) removed++;
+                    } else {
+                        byNote[n] = e;
+                    }
+                });
+            });
+
+            if (removed === 0) {
+                showToast('Žiadne duplicitné prázdne spojnice');
+                return;
+            }
+            book.edges = book.edges.filter(e => keepIds.has(e.id));
+            saveAppData();
+            refreshAllUI();
+            showToast(`Odstránených ${removed} duplicitných spojníc`);
         }
 
         function jumpToPageOrNote(rawQuery) {
@@ -3639,11 +3774,52 @@
             }
 
             document.getElementById('compass-goto-page').value = '';
+            rememberRecentPage(pageId);
             visitNodeInRun(pageId, true);
             if (currentViewMode !== 'compass') setViewMode('compass');
             else renderCompassCards();
             showToast(`Tu som: strana ${pageId} — môžeš pridávať voľby`);
             requestAnimationFrame(() => document.getElementById('compass-quick-target')?.focus());
+        }
+
+        function fillCompassTarget(pageId) {
+            const input = document.getElementById('compass-quick-target');
+            if (!input) return;
+            input.value = pageId;
+            input.focus();
+            requestAnimationFrame(() => document.getElementById('compass-quick-note')?.focus());
+        }
+
+        function fillCompassGoto(pageId) {
+            const input = document.getElementById('compass-goto-page');
+            if (!input) return;
+            input.value = pageId;
+            compassGoToPage();
+        }
+
+        function compassDuplicateLastChoice() {
+            if (!lastCompassChoiceTarget) {
+                showToast('Zatiaľ žiadna predchádzajúca voľba', 'warning');
+                return;
+            }
+            fillCompassTarget(lastCompassChoiceTarget);
+            showToast(`Cieľ ${lastCompassChoiceTarget} — doplň iný text voľby`);
+        }
+
+        function renderCompassRecentChips() {
+            const hereId = getActiveBook()?.currentNodeId || selectedNodeId;
+            const gotoBox = document.getElementById('compass-recent-goto');
+            const tgtBox = document.getElementById('compass-recent-targets');
+            if (!gotoBox || !tgtBox) return;
+
+            const chips = recentPageIds.filter(id => id !== String(hereId)).slice(0, 6);
+            gotoBox.innerHTML = chips.length
+                ? chips.map(id => `<button type="button" onclick="fillCompassGoto('${id}')" class="px-2 py-0.5 rounded-lg app-card border text-[10px] font-bold">← ${id}</button>`).join('')
+                : '<span class="text-[10px] opacity-40">Nedávne strany sa zobrazia po skokoch</span>';
+
+            tgtBox.innerHTML = recentPageIds.slice(0, 6).map(id =>
+                `<button type="button" onclick="fillCompassTarget('${id}')" class="px-2 py-0.5 rounded-lg app-card border text-[10px] font-bold">→ ${id}</button>`
+            ).join('') || '';
         }
 
         function handleCompassQuickBranch() {
@@ -3682,6 +3858,8 @@
                 b.classList.toggle('app-accent-btn', b.dataset.qtype === quickNodeType);
             });
 
+            lastCompassChoiceTarget = parts[0];
+            rememberRecentPage(parts[0]);
             handleQuickBranchSubmit({ stayOnSource: true });
 
             document.getElementById('compass-quick-target').value = '';
@@ -3692,7 +3870,9 @@
 
             if (currentViewMode !== 'compass') setViewMode('compass');
             else renderCompassCards();
-            requestAnimationFrame(() => document.getElementById('compass-quick-target')?.focus());
+            requestAnimationFrame(() => {
+                document.getElementById('compass-quick-target')?.focus();
+            });
         }
 
         function renderCompassRpgStrip() {
@@ -3831,6 +4011,8 @@
                 gotoHint.value = '';
                 gotoHint.placeholder = `Skok na inú stranu (teraz si na ${hereId})`;
             }
+            rememberRecentPage(hereId);
+            renderCompassRecentChips();
         }
 
         // ==========================================
@@ -5326,41 +5508,124 @@
 
         function exportFullBookJSON() {
             const book = getActiveBook();
+            if (!book) return;
             const blob = new Blob([JSON.stringify(book, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${book.title.toLowerCase().replace(/[^a-z0-9]+/gi, '_')}.json`;
+            a.download = `${(book.title || 'kniha').toLowerCase().replace(/[^a-z0-9áäčďéíľĺňóôŕšťúýž]+/gi, '_') || 'kniha'}.json`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('Kompletná kniha uložená do súboru .JSON');
+            showToast('Aktuálna kniha uložená do .JSON');
         }
 
-        function importFullBookJSON(event) {
+        function exportLibraryJSON() {
+            const worldMaps = {};
+            Object.values(appData.books || {}).forEach(book => {
+                if (!book?.syncId) return;
+                let img = book.worldMapImage || '';
+                if (!img) {
+                    try { img = localStorage.getItem(WORLD_MAP_PREFIX + book.syncId) || ''; } catch (_) {}
+                }
+                if (img) worldMaps[book.syncId] = img;
+            });
+            const packet = {
+                format: 'kartograf-library',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                activeBookId: appData.activeBookId,
+                books: appData.books,
+                worldMaps,
+                settings: appSettings || {}
+            };
+            const blob = new Blob([JSON.stringify(packet)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kartograf_kniznica_${formatTodayDate().replace(/[^\d]+/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Záloha knižnice (${Object.keys(appData.books).length} kníh)`);
+        }
+
+        function applyImportedBook(loadedBook) {
+            const syncId = loadedBook.syncId || ('book_' + Date.now());
+            loadedBook.syncId = syncId;
+            if (!loadedBook.totalTargetEndings) loadedBook.totalTargetEndings = 5;
+            if (loadedBook.worldMapImage) {
+                try { localStorage.setItem(WORLD_MAP_PREFIX + syncId, loadedBook.worldMapImage); } catch (_) {}
+            }
+            appData.books[syncId] = loadedBook;
+            appData.activeBookId = syncId;
+            selectedNodeId = loadedBook.currentNodeId || loadedBook.startNodeId || Object.keys(loadedBook.nodes || {})[0];
+            rememberRecentPage(selectedNodeId);
+        }
+
+        function importLibraryPacket(packet) {
+            if (!packet?.books || typeof packet.books !== 'object') throw new Error('bad library');
+            const count = Object.keys(packet.books).length;
+            if (!count) throw new Error('empty');
+            const replace = confirm(
+                `Načítať knižnicu (${count} kníh)?\n\nOK = nahradiť celú knižnicu\nZrušiť = zlúčiť / doplniť ku existujúcim`
+            );
+            if (replace) {
+                appData.books = {};
+            }
+            Object.entries(packet.books).forEach(([id, book]) => {
+                const syncId = book.syncId || id || ('book_' + Date.now());
+                book.syncId = syncId;
+                if (packet.worldMaps?.[syncId]) {
+                    book.worldMapImage = packet.worldMaps[syncId];
+                    try { localStorage.setItem(WORLD_MAP_PREFIX + syncId, packet.worldMaps[syncId]); } catch (_) {}
+                }
+                appData.books[syncId] = book;
+            });
+            appData.activeBookId = packet.activeBookId && appData.books[packet.activeBookId]
+                ? packet.activeBookId
+                : Object.keys(appData.books)[0];
+            if (packet.settings && typeof packet.settings === 'object') {
+                appSettings = { ...appSettings, ...packet.settings };
+                try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); } catch (_) {}
+            }
+            const active = getActiveBook();
+            selectedNodeId = active?.currentNodeId || active?.startNodeId || '1';
+            rememberRecentPage(selectedNodeId);
+            return count;
+        }
+
+        function importAnyKartografJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    const loadedBook = JSON.parse(e.target.result);
-                    if (!loadedBook.nodes || !loadedBook.edges) throw new Error();
-                    const syncId = loadedBook.syncId || ('book_' + Date.now());
-                    loadedBook.syncId = syncId;
-                    if (!loadedBook.totalTargetEndings) loadedBook.totalTargetEndings = 5;
-                    appData.books[syncId] = loadedBook;
-                    appData.activeBookId = syncId;
-                    selectedNodeId = loadedBook.currentNodeId || loadedBook.startNodeId;
+                    const data = JSON.parse(e.target.result);
+                    if (data.format === 'kartograf-library' || (data.books && !data.nodes)) {
+                        const n = importLibraryPacket(data);
+                        saveAppData();
+                        closeModalById('transfer-modal');
+                        refreshAllUI();
+                        fitGraphToScreen();
+                        showToast(`Knižnica načítaná (${n} kníh)`);
+                        return;
+                    }
+                    if (!data.nodes || !data.edges) throw new Error();
+                    applyImportedBook(data);
                     saveAppData();
                     closeModalById('transfer-modal');
                     refreshAllUI();
                     fitGraphToScreen();
-                    showToast(`Kniha "${loadedBook.title}" bola načítaná`);
+                    showToast(`Kniha "${data.title || 'bez názvu'}" načítaná`);
                 } catch (_) {
                     showToast('Neplatný súbor .JSON', 'warning');
                 }
             };
             reader.readAsText(file);
             event.target.value = '';
+        }
+
+        function importFullBookJSON(event) {
+            importAnyKartografJSON(event);
         }
 
         function triggerPrintAtlas() {

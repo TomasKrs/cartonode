@@ -12,8 +12,12 @@ Funguje na PC, Mac, Linux, iOS aj Android (prehliadač). Netreba inštaláciu.
 ## Dáta
 
 - Knižnica kníh, pokusy a nastavenia sa ukladajú v **localStorage** daného prehliadača / zariadenia.
-- Medzi zariadeniami synchronizuj cez **QR prenos** (záloha / prenos v appke).
-- Vymazanie dát prehliadača = strata lokálnej knižnice — pred tým exportuj QR alebo JSON zálohu.
+- Medzi zariadeniami: **QR prenos**, alebo **Prenos → Záloha .JSON** (aktuálna kniha / celá knižnica).
+- Vymazanie dát prehliadača = strata lokálnej knižnice — pred tým ulož JSON na disk.
+
+## Atlas filtre
+
+Tlačidlo **Všetko / Fokus / Trasa / Nové** cykluje hustotu mapy. Metlička opraví duplicitné prázdne spojnice.
 
 ## Pohľady
 
