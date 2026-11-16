@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gamebook Kartograf v2.7</title>
+    <title>Gamebook Kartograf v2.8</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -436,20 +436,33 @@
         }
 
         @media print {
-            body, html {
+            html, body {
                 overflow: visible !important;
+                height: auto !important;
                 background: #ffffff !important;
                 color: #000000 !important;
             }
-            .no-print {
+            body > *:not(#print-report-container) {
                 display: none !important;
             }
             #print-report-container {
                 display: block !important;
                 position: static !important;
                 width: 100% !important;
+                min-height: 0 !important;
                 background: #ffffff !important;
                 color: #000000 !important;
+                padding: 12mm !important;
+            }
+            #print-svg-mount svg {
+                width: 100% !important;
+                height: auto !important;
+                max-height: 170mm !important;
+                border: 1px solid #ccc;
+            }
+            .print-page-break {
+                break-before: page;
+                page-break-before: always;
             }
         }
     </style>
@@ -1370,12 +1383,17 @@
                         <i class="fa-solid fa-boxes-stacked text-violet-400 text-sm"></i>
                         <span>Celá knižnica</span>
                     </button>
+                    <button onclick="shareLibraryBackup()" class="py-2.5 px-2 rounded-xl app-surface border font-semibold hover:opacity-85 flex flex-col items-center gap-1 col-span-2">
+                        <i class="fa-solid fa-share-nodes text-sky-400 text-sm"></i>
+                        <span>Zdieľať zálohu (Files / Drive / AirDrop…)</span>
+                    </button>
                     <label class="py-2.5 px-2 rounded-xl app-surface border font-semibold hover:opacity-85 flex flex-col items-center gap-1 cursor-pointer col-span-2">
                         <i class="fa-solid fa-file-arrow-up text-emerald-400 text-sm"></i>
                         <span>Načítať .JSON (kniha alebo knižnica)</span>
                         <input type="file" accept=".json,application/json" class="hidden" onchange="importAnyKartografJSON(event)">
                     </label>
                 </div>
+                <p class="text-[10px] opacity-55 leading-snug">Google Drive / iCloud priamo v appke by vyžadovali prihlásenie (OAuth). Jednoduchšie: Zdieľať → Uložiť do Files/Drive, na PC ten istý súbor otvoriť cez Načítať.</p>
                 <button onclick="cleanupEmptyParallelEdges()" class="w-full py-2 rounded-xl app-surface border font-semibold hover:opacity-85">
                     <i class="fa-solid fa-broom mr-1 text-amber-400"></i> Opraviť prázdne paralelné spojnice
                 </button>
@@ -1414,8 +1432,8 @@
             </div>
             <span class="text-xs text-gray-500">Gamebook Kartograf</span>
         </div>
-        <div id="print-svg-mount" class="border border-gray-300 rounded-xl p-2 flex justify-center"></div>
-        <div>
+        <div id="print-svg-mount" class="border border-gray-300 rounded-xl p-2 bg-white"></div>
+        <div class="print-page-break">
             <h2 class="text-lg font-bold border-b border-gray-400 pb-1 mb-3">Register strán a poznámok</h2>
             <div id="print-index-list" class="grid grid-cols-2 gap-3 text-xs"></div>
         </div>
@@ -1464,7 +1482,7 @@
 
     <script>
         /**
-         * GAMEBOOK KARTOGRAF v2.7
+         * GAMEBOOK KARTOGRAF v2.8
          * Kompletná single-file aplikácia – Karty = reading loop (mobile), Mapa = atlas (PC).
          */
 
@@ -5628,32 +5646,204 @@
             importAnyKartografJSON(event);
         }
 
+        function buildPrintAtlasSvg(book) {
+            const nodes = Object.values(book.nodes);
+            if (!nodes.length) {
+                const empty = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                empty.setAttribute('viewBox', '0 0 400 120');
+                empty.innerHTML = '<text x="200" y="64" text-anchor="middle" fill="#666" font-size="14">Mapa je prázdna</text>';
+                return empty;
+            }
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            nodes.forEach(n => {
+                minX = Math.min(minX, n.x - 40);
+                minY = Math.min(minY, n.y - 40);
+                maxX = Math.max(maxX, n.x + 40);
+                maxY = Math.max(maxY, n.y + 40);
+            });
+            const pad = 36;
+            minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+            const w = Math.max(320, maxX - minX);
+            const h = Math.max(240, maxY - minY);
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            svg.setAttribute('viewBox', `${minX} ${minY} ${w} ${h}`);
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            defs.innerHTML = `
+                <marker id="print-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#333"/>
+                </marker>`;
+            svg.appendChild(defs);
+
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bg.setAttribute('x', String(minX));
+            bg.setAttribute('y', String(minY));
+            bg.setAttribute('width', String(w));
+            bg.setAttribute('height', String(h));
+            bg.setAttribute('fill', '#ffffff');
+            svg.appendChild(bg);
+
+            book.edges.forEach(edge => {
+                const a = book.nodes[edge.from];
+                const b = book.nodes[edge.to];
+                if (!a || !b) return;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const midY = (a.y + b.y) / 2;
+                path.setAttribute('d', `M ${a.x} ${a.y} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y}`);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', edge.color || '#444444');
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('marker-end', 'url(#print-arrow)');
+                svg.appendChild(path);
+
+                if ((edge.note || '').trim()) {
+                    const t = 0.28;
+                    const lx = a.x + (b.x - a.x) * t;
+                    const ly = a.y + (b.y - a.y) * t;
+                    const short = edge.note.length > 18 ? edge.note.slice(0, 16) + '…' : edge.note;
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', String(lx));
+                    label.setAttribute('y', String(ly - 6));
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('font-size', '9');
+                    label.setAttribute('font-weight', '600');
+                    label.setAttribute('fill', '#111');
+                    label.textContent = short;
+                    svg.appendChild(label);
+                }
+            });
+
+            nodes.forEach(node => {
+                const term = TERMINAL_STATUS_CONFIG[node.status];
+                const fill = term ? term.fill : '#ffffff';
+                const stroke = term ? term.stroke : (node.color || '#222222');
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', String(node.x));
+                circle.setAttribute('cy', String(node.y));
+                circle.setAttribute('r', '22');
+                circle.setAttribute('fill', fill);
+                circle.setAttribute('stroke', stroke);
+                circle.setAttribute('stroke-width', term ? '3' : '2.5');
+                if (node.status === 'ghost') circle.setAttribute('stroke-dasharray', '4 3');
+                svg.appendChild(circle);
+
+                const num = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                num.setAttribute('x', String(node.x));
+                num.setAttribute('y', String(node.y + 5));
+                num.setAttribute('text-anchor', 'middle');
+                num.setAttribute('font-size', node.id.length > 3 ? '11' : '13');
+                num.setAttribute('font-weight', '800');
+                num.setAttribute('fill', term ? '#ffffff' : '#111111');
+                num.textContent = node.id;
+                svg.appendChild(num);
+
+                if ((node.note || '').trim()) {
+                    const short = node.note.length > 22 ? node.note.slice(0, 20) + '…' : node.note;
+                    const note = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    note.setAttribute('x', String(node.x));
+                    note.setAttribute('y', String(node.y + 36));
+                    note.setAttribute('text-anchor', 'middle');
+                    note.setAttribute('font-size', '9');
+                    note.setAttribute('fill', '#333');
+                    note.textContent = short;
+                    svg.appendChild(note);
+                }
+            });
+
+            return svg;
+        }
+
         function triggerPrintAtlas() {
             const book = getActiveBook();
+            if (!book) return;
             closeModalById('transfer-modal');
+
+            // Tlač potrebuje Atlas so všetkými uzlami (nie filter hustoty)
+            const prevFilter = graphFilterMode;
+            graphFilterMode = 'all';
+            if (currentViewMode === 'tree' || currentViewMode === 'web') renderGraph();
 
             const endings = countDiscoveredEndings(book);
             document.getElementById('print-atlas-title').textContent = book.title;
-            document.getElementById('print-atlas-meta').textContent = `Objavených strán: ${Object.keys(book.nodes).length} • Konce: ${endings.all.length} / ${book.totalTargetEndings || '?'} • Dátum tlače: ${formatTodayDate()}`;
+            document.getElementById('print-atlas-meta').textContent =
+                `Objavených strán: ${Object.keys(book.nodes).length} • Konce: ${endings.all.length} / ${book.totalTargetEndings || '?'} • Dátum tlače: ${formatTodayDate()}`;
 
-            const svgClone = document.getElementById('map-svg').cloneNode(true);
-            svgClone.style.width = '100%';
-            svgClone.style.height = '420px';
-            document.getElementById('print-svg-mount').innerHTML = '';
-            document.getElementById('print-svg-mount').appendChild(svgClone);
+            const mount = document.getElementById('print-svg-mount');
+            mount.innerHTML = '';
+            mount.appendChild(buildPrintAtlasSvg(book));
 
-            const sortedNodes = Object.values(book.nodes).sort((a, b) => Number(a.id) - Number(b.id));
+            const sortedNodes = Object.values(book.nodes).sort((a, b) => comparePageIds(a.id, b.id));
             document.getElementById('print-index-list').innerHTML = sortedNodes.map(n => {
-                const outs = book.edges.filter(e => e.from === n.id).map(e => e.to).join(', ');
+                const outs = book.edges
+                    .filter(e => e.from === n.id)
+                    .map(e => `${e.to}${e.note ? ` (${escapeHtml(e.note)})` : ''}`)
+                    .join(', ');
                 return `
                     <div class="border border-gray-300 rounded p-2">
-                        <strong>Strana ${n.id}</strong> ${outs ? `→ [${outs}]` : ''}
+                        <strong>Strana ${n.id}</strong> ${outs ? `→ ${outs}` : ''}
                         ${n.note ? `<div class="text-gray-700 mt-0.5">${escapeHtml(n.note)}</div>` : ''}
                     </div>
                 `;
             }).join('');
 
-            setTimeout(() => window.print(), 200);
+            const restore = () => {
+                graphFilterMode = prevFilter;
+                updateGraphFilterButton();
+                if (currentViewMode === 'tree' || currentViewMode === 'web') renderGraph();
+                window.removeEventListener('afterprint', restore);
+            };
+            window.addEventListener('afterprint', restore);
+
+            setTimeout(() => window.print(), 120);
+        }
+
+        async function shareLibraryBackup() {
+            const worldMaps = {};
+            Object.values(appData.books || {}).forEach(book => {
+                if (!book?.syncId) return;
+                let img = book.worldMapImage || '';
+                if (!img) {
+                    try { img = localStorage.getItem(WORLD_MAP_PREFIX + book.syncId) || ''; } catch (_) {}
+                }
+                if (img) worldMaps[book.syncId] = img;
+            });
+            const packet = {
+                format: 'kartograf-library',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                activeBookId: appData.activeBookId,
+                books: appData.books,
+                worldMaps,
+                settings: appSettings || {}
+            };
+            const text = JSON.stringify(packet);
+            const filename = `kartograf_kniznica_${formatTodayDate().replace(/[^\d]+/g, '-')}.json`;
+            const file = new File([text], filename, { type: 'application/json' });
+
+            try {
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Kartograf – záloha knižnice',
+                        text: 'Záloha Gamebook Kartograf'
+                    });
+                    showToast('Záloha odoslaná cez systémové zdieľanie');
+                    return;
+                }
+                if (navigator.share) {
+                    // Niektoré prehliadače nezdieľajú súbory – aspoň textová cesta nie je vhodná (príliš veľké).
+                    // Fallback: download
+                }
+            } catch (err) {
+                if (err?.name === 'AbortError') return;
+            }
+            exportLibraryJSON();
+            showToast('Súbor stiahnutý — ulož ho do Drive/Files a na druhom zariadení Načítaj');
         }
 
         // ==========================================
