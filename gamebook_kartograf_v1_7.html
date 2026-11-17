@@ -2,8 +2,8 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gamebook Kartograf v2.8</title>
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gamebook Kartograf v3.2</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -266,6 +266,9 @@
             background-color: var(--bg-app);
             color: var(--text-main);
             user-select: none;
+            /* iPad/Safari: vypnúť dvojťuk zoom stránky */
+            touch-action: manipulation;
+            -ms-touch-action: manipulation;
         }
 
         body {
@@ -287,9 +290,20 @@
             transform: translate(-50%, -100%);
             pointer-events: auto;
             max-width: calc(100vw - 16px);
-            overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
+        }
+
+        #edge-action-bar {
+            overflow-x: auto;
+        }
+
+        #node-action-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.35rem;
+            padding: 0.4rem;
+            min-width: min(320px, calc(100vw - 16px));
         }
 
         #node-action-bar.visible,
@@ -297,17 +311,267 @@
             display: flex;
         }
 
+        #node-action-bar .nab-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        #node-action-bar .nab-pickers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.35rem;
+        }
+
+        #node-action-bar .nab-pickers.is-terminal-hidden {
+            display: none !important;
+        }
+
+        .nab-carousel {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            min-width: 0;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .nab-carousel-stage {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.15rem;
+            padding: 0.35rem 0.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+            background: color-mix(in srgb, var(--card) 88%, transparent);
+            cursor: grab;
+        }
+
+        .nab-face {
+            width: 2.6rem;
+            height: 2.6rem;
+            border-radius: 0.7rem;
+            border: 1px solid color-mix(in srgb, var(--text) 16%, transparent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            line-height: 1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #334155;
+        }
+
+        .nab-face-label {
+            font-size: 10px;
+            font-weight: 700;
+            opacity: 0.85;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .nab-carousel-btn,
+        .nd-carousel-btn {
+            width: 2rem;
+            height: 2.75rem;
+            border-radius: 0.65rem;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+
+        .pick-ribbon {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-width: 0;
+            touch-action: pan-y;
+            user-select: none;
+        }
+
+        .pick-ribbon-frame {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            height: 3.35rem;
+            border-radius: 0.85rem;
+            border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+            background: color-mix(in srgb, var(--card) 90%, transparent);
+            overflow: hidden;
+        }
+
+        .pick-ribbon-window {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        .pick-ribbon-item {
+            flex: 0 0 calc(100% / 6);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            line-height: 1;
+            opacity: 0.4;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .pick-ribbon-item.is-center {
+            opacity: 1;
+            transform: scale(1.12);
+            font-weight: 700;
+        }
+
+        .pick-ribbon-item .swatch {
+            width: 1.7rem;
+            height: 1.7rem;
+            border-radius: 0.45rem;
+            border: 1px solid rgba(255,255,255,0.25);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .pick-ribbon-cursor {
+            pointer-events: none;
+            position: absolute;
+            z-index: 2;
+            top: 3px;
+            bottom: 3px;
+            left: calc((100% / 6) * 2 + 2px);
+            width: calc((100% / 6) - 4px);
+            border: 2px solid var(--accent);
+            border-radius: 0.65rem;
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+        }
+
+        #dice-table-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(0,0,0,0.45);
+            padding: 1rem;
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+
+        #dice-table-overlay.visible {
+            display: flex;
+        }
+
+        #dice-table {
+            width: min(420px, 100%);
+            min-height: 220px;
+            border-radius: 1.25rem 1.25rem 0.75rem 0.75rem;
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.12), transparent 55%),
+                linear-gradient(160deg, #1a4d3a 0%, #0f3328 55%, #0a241c 100%);
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12);
+            padding: 1rem 1rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        #dice-table-felt {
+            flex: 1;
+            min-height: 140px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            perspective: 600px;
+        }
+
+        .thrown-die {
+            width: 3.4rem;
+            height: 3.4rem;
+            border-radius: 0.7rem;
+            background: linear-gradient(145deg, #f8fafc, #cbd5e1);
+            color: #0f172a;
+            font-weight: 900;
+            font-size: 1.35rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.35), inset 0 -3px 0 rgba(0,0,0,0.12);
+            transform-style: preserve-3d;
+            animation: dieToss 0.85s cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        .thrown-die.d4 { clip-path: polygon(50% 4%, 96% 88%, 4% 88%); border-radius: 0; }
+        .thrown-die.d8 { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); border-radius: 0; }
+        .thrown-die.d10 { clip-path: polygon(50% 0%, 90% 35%, 70% 100%, 30% 100%, 10% 35%); border-radius: 0; }
+        .thrown-die.d12 { border-radius: 0.95rem; }
+        .thrown-die.d20 { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border-radius: 0; }
+
+        @keyframes dieToss {
+            0% { transform: translateY(-120px) rotate3d(1,1,0, -480deg) scale(0.6); opacity: 0; }
+            55% { transform: translateY(8px) rotate3d(1,0.6,0.3, 40deg) scale(1.05); opacity: 1; }
+            75% { transform: translateY(-6px) rotate3d(0.2,1,0, -12deg) scale(0.98); }
+            100% { transform: translateY(0) rotate3d(0,0,0, 0deg) scale(1); }
+        }
+
+        .print-map-page {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .print-map-page + .print-map-page {
+            break-before: page;
+            page-break-before: always;
+        }
+
+        #print-index-list > div {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        /* Základ / Bežné / Všetko */
+        body.ui-zaklad .ui-medium-only,
+        body.ui-zaklad .ui-full-only {
+            display: none !important;
+        }
+        body.ui-bezne .ui-full-only {
+            display: none !important;
+        }
+        /* V režime Ikony skryť výber terénov */
+        body.fill-icons .fill-terrain-ui {
+            display: none !important;
+        }
+
         @media (max-width: 480px) {
-            #node-action-bar button span,
+            #node-action-bar .nab-row > button span,
             #edge-action-bar button span {
                 display: none;
             }
-            #node-action-bar button,
+            #node-action-bar .nab-row > button,
             #edge-action-bar button {
                 padding-left: 0.65rem;
                 padding-right: 0.65rem;
                 min-width: 2.5rem;
                 justify-content: center;
+            }
+            #node-action-bar .nab-pickers {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -457,12 +721,24 @@
             #print-svg-mount svg {
                 width: 100% !important;
                 height: auto !important;
-                max-height: 170mm !important;
+                max-height: 220mm !important;
                 border: 1px solid #ccc;
             }
             .print-page-break {
                 break-before: page;
                 page-break-before: always;
+            }
+            .print-map-page {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            .print-map-page + .print-map-page {
+                break-before: page;
+                page-break-before: always;
+            }
+            #print-index-list > div {
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
         }
     </style>
@@ -470,7 +746,7 @@
 <body class="flex flex-col w-screen overflow-hidden" style="height: 100dvh;">
 
     <!-- HORNÁ LIŠTA: Dvojriadková na mobile, jednoriadková na PC -->
-    <header class="no-print app-surface border-b px-2.5 sm:px-4 py-1.5 sm:py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 z-30 shrink-0">
+    <header class="no-print relative app-surface border-b px-2.5 sm:px-4 py-1.5 sm:py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 z-30 shrink-0">
         <!-- Riadok 1: Kniha + Nástroje -->
         <div class="flex items-center justify-between gap-2 min-w-0">
             <button onclick="openLibraryModal()" class="flex items-center gap-2 text-left min-w-0 flex-1 p-1 rounded-xl hover:bg-black/10 transition">
@@ -490,91 +766,167 @@
                 </div>
             </button>
 
-            <!-- Pravé nástroje (Analýza, Postava, Prenos, Témy) -->
-            <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                <button id="btn-undo" onclick="undoLastAction()" class="p-2 rounded-xl app-card border text-xs opacity-40" disabled title="Späť (Undo)">
-                    <i class="fa-solid fa-rotate-left"></i>
-                </button>
-                <button id="btn-redo" onclick="redoLastAction()" class="p-2 rounded-xl app-card border text-xs opacity-40" disabled title="Znova (Redo)">
-                    <i class="fa-solid fa-rotate-right"></i>
+            <!-- Desktop nástroje; na mobile/tablete len Viac + 100% -->
+            <div class="flex items-center gap-1.5 sm:gap-1.5 shrink-0">
+                <button type="button" onclick="resetBrowserZoom()" class="min-w-[2.75rem] min-h-[2.75rem] px-2 rounded-xl app-card border text-[11px] font-extrabold sm:hidden" title="Obnoviť zobrazenie stránky na 100 %">
+                    100%
                 </button>
 
-                <button onclick="toggleRightDrawer('analyzer')" class="p-2 sm:px-2.5 sm:py-1.5 rounded-xl app-card border text-xs font-semibold hover:opacity-90 transition flex items-center gap-1.5" title="Analýza ciest a denník">
-                    <i class="fa-solid fa-route" style="color: var(--accent)"></i>
-                    <span class="hidden lg:inline">Analýza</span>
-                </button>
-
-                <button id="header-rpg-btn" onclick="toggleRightDrawer('rpg')" class="hidden p-2 sm:px-2.5 sm:py-1.5 rounded-xl app-card border text-xs font-semibold hover:opacity-90 transition flex items-center gap-1.5" title="Prievodka postavy, inventár a kocky">
-                    <i class="fa-solid fa-dice-d20 text-emerald-400"></i>
-                    <span class="hidden lg:inline">Postava</span>
-                </button>
-
-                <button onclick="openTransferModal()" class="p-2 sm:px-2.5 sm:py-1.5 rounded-xl app-card border text-xs font-semibold hover:opacity-90 transition flex items-center gap-1.5" title="QR prenos, záloha a tlač">
-                    <i class="fa-solid fa-qrcode text-sky-400"></i>
-                    <span class="hidden lg:inline">Prenos</span>
-                </button>
-
-                <!-- Prepínač 5 farebných schém -->
-                <div class="relative">
-                    <button id="theme-menu-btn" onclick="toggleThemeMenu()" class="p-2 rounded-xl app-card border text-xs hover:opacity-90 transition" title="Zmeniť farebnú schému">
-                        <i id="theme-icon" class="fa-solid fa-palette" style="color: var(--accent)"></i>
+                <div class="hidden md:flex items-center gap-1.5">
+                    <button id="btn-undo" onclick="undoLastAction()" class="min-w-[2.5rem] min-h-[2.5rem] p-2 rounded-xl app-card border text-sm opacity-40" disabled title="Späť (Undo)">
+                        <i class="fa-solid fa-rotate-left"></i>
                     </button>
-                    <div id="theme-menu" class="hidden absolute right-0 mt-1.5 w-56 app-surface border rounded-2xl shadow-2xl p-1.5 z-50 text-xs space-y-1 max-h-[70vh] overflow-y-auto custom-scroll">
-                        <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider opacity-60">Farebná schéma</div>
-                        <button onclick="setTheme('midnight')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-slate-900 border border-amber-400"></span> Polnočný kartograf
+                    <button id="btn-redo" onclick="redoLastAction()" class="min-w-[2.5rem] min-h-[2.5rem] p-2 rounded-xl app-card border text-sm opacity-40" disabled title="Znova (Redo)">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button onclick="toggleRightDrawer('analyzer')" class="ui-full-only min-h-[2.5rem] px-2.5 py-1.5 rounded-xl app-card border text-sm font-semibold hover:opacity-90 transition flex items-center gap-1.5" title="Analýza ciest a denník">
+                        <i class="fa-solid fa-route" style="color: var(--accent)"></i>
+                        <span class="hidden lg:inline">Analýza</span>
+                    </button>
+                    <button id="header-rpg-btn" onclick="toggleRightDrawer('rpg')" class="ui-full-only hidden min-h-[2.5rem] px-2.5 py-1.5 rounded-xl app-card border text-sm font-semibold hover:opacity-90 transition flex items-center gap-1.5" title="Prievodka postavy, inventár a kocky">
+                        <i class="fa-solid fa-dice-d20 text-emerald-400"></i>
+                        <span class="hidden lg:inline">Postava</span>
+                    </button>
+                    <button onclick="openTransferModal()" class="ui-medium-only min-h-[2.5rem] px-2.5 py-1.5 rounded-xl app-card border text-sm font-semibold hover:opacity-90 transition flex items-center gap-1.5" title="QR prenos, záloha a tlač">
+                        <i class="fa-solid fa-qrcode text-sky-400"></i>
+                        <span class="hidden lg:inline">Prenos</span>
+                    </button>
+                    <div class="relative">
+                        <button id="theme-menu-btn" onclick="toggleThemeMenu()" class="min-w-[2.5rem] min-h-[2.5rem] p-2 rounded-xl app-card border text-sm hover:opacity-90 transition" title="Zmeniť farebnú schému">
+                            <i id="theme-icon" class="fa-solid fa-palette" style="color: var(--accent)"></i>
                         </button>
-                        <button onclick="setTheme('parchment')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#f3ead8] border border-amber-800"></span> Starý pergamen
+                    </div>
+                    <button id="ui-scope-btn" onclick="toggleUiScopeMenu()" class="min-w-[2.5rem] min-h-[2.5rem] p-2 rounded-xl app-card border text-sm hover:opacity-90 transition" title="Rozsah ovládania">
+                        <i class="fa-solid fa-sliders" style="color: var(--accent)"></i>
+                    </button>
+                </div>
+
+                <div class="relative md:hidden">
+                    <button type="button" onclick="toggleMoreMenu()" class="min-w-[2.75rem] min-h-[2.75rem] rounded-xl app-accent-btn text-sm font-bold flex items-center justify-center" title="Viac nástrojov">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div id="more-menu" class="hidden absolute right-0 mt-1.5 w-56 app-surface border rounded-2xl shadow-2xl p-1.5 z-50 text-sm space-y-0.5">
+                        <button type="button" onclick="undoLastAction(); hideMoreMenu();" id="btn-undo-mobile" class="w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold opacity-40" disabled>
+                            <i class="fa-solid fa-rotate-left w-5 text-center"></i> Späť
                         </button>
-                        <button onclick="setTheme('forest')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#0c1f17] border border-emerald-400"></span> Temný hvozd
+                        <button type="button" onclick="redoLastAction(); hideMoreMenu();" id="btn-redo-mobile" class="w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold opacity-40" disabled>
+                            <i class="fa-solid fa-rotate-right w-5 text-center"></i> Znova
                         </button>
-                        <button onclick="setTheme('crimson')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#180c10] border border-rose-500"></span> Krvavý rubín
+                        <button type="button" onclick="hideMoreMenu(); toggleRightDrawer('analyzer');" class="ui-full-only w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold">
+                            <i class="fa-solid fa-route w-5 text-center" style="color: var(--accent)"></i> Analýza
                         </button>
-                        <button onclick="setTheme('paper')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-white border border-blue-600"></span> Čistý papier
+                        <button type="button" id="header-rpg-btn-mobile" onclick="hideMoreMenu(); toggleRightDrawer('rpg');" class="ui-full-only hidden w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold">
+                            <i class="fa-solid fa-dice-d20 w-5 text-center text-emerald-400"></i> Postava
                         </button>
-                        <button onclick="setTheme('ocean')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#0a1628] border border-sky-400"></span> Hlboký oceán
+                        <button type="button" onclick="hideMoreMenu(); openTransferModal();" class="ui-medium-only w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold">
+                            <i class="fa-solid fa-qrcode w-5 text-center text-sky-400"></i> Prenos / záloha
                         </button>
-                        <button onclick="setTheme('ink')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-black border border-yellow-500"></span> Tuš a zlato
+                        <button type="button" onclick="hideMoreMenu(); toggleThemeMenu();" class="w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold">
+                            <i class="fa-solid fa-palette w-5 text-center" style="color: var(--accent)"></i> Téma
                         </button>
-                        <button onclick="setTheme('frost')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#0e1a24] border border-cyan-300"></span> Severný mráz
+                        <button type="button" onclick="hideMoreMenu(); toggleUiScopeMenu();" class="w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold">
+                            <i class="fa-solid fa-sliders w-5 text-center" style="color: var(--accent)"></i> Rozsah ovládania
                         </button>
-                        <button onclick="setTheme('dusk')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#1a1028] border border-purple-400"></span> Súmrak a čary
-                        </button>
-                        <button onclick="setTheme('desert')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#2a1c10] border border-amber-500"></span> Piesočná púšť
-                        </button>
-                        <button onclick="setTheme('slate')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#1c1f24] border border-slate-400"></span> Kamenná kobka
+                        <button type="button" onclick="hideMoreMenu(); resetBrowserZoom();" class="w-full text-left px-3 py-3 rounded-xl hover:bg-black/15 flex items-center gap-3 font-semibold">
+                            <i class="fa-solid fa-magnifying-glass w-5 text-center"></i> Obnoviť 100 %
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Riadok 2 na mobile (v strede na PC): Prepínač 4 pohľadov -->
-        <div class="grid grid-cols-4 sm:flex items-center app-card border rounded-xl p-0.5 shrink-0">
-            <button onclick="setViewMode('tree')" id="view-btn-tree" class="view-tab-btn justify-center px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1" title="Atlas – prehľad celej mapy (ideálne na PC)">
-                <i class="fa-solid fa-sitemap"></i>
+        <!-- Theme menu: fixed, aby neutečalo za okraj -->
+        <div id="theme-menu" class="hidden fixed z-[60] app-surface border rounded-2xl shadow-2xl p-1.5 text-xs space-y-1 overflow-y-auto custom-scroll" style="right:8px; width:min(16rem, calc(100vw - 16px)); max-height:min(70vh, calc(100dvh - 72px));">
+            <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider opacity-60">Farebná schéma</div>
+            <button onclick="setTheme('midnight')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-slate-900 border border-amber-400"></span> Polnočný kartograf
+            </button>
+            <button onclick="setTheme('parchment')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#f3ead8] border border-amber-800"></span> Starý pergamen
+            </button>
+            <button onclick="setTheme('forest')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#0c1f17] border border-emerald-400"></span> Temný hvozd
+            </button>
+            <button onclick="setTheme('crimson')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#180c10] border border-rose-500"></span> Krvavý rubín
+            </button>
+            <button onclick="setTheme('paper')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-white border border-blue-600"></span> Čistý papier
+            </button>
+            <button onclick="setTheme('ocean')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#0a1628] border border-sky-400"></span> Hlboký oceán
+            </button>
+            <button onclick="setTheme('ink')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-black border border-yellow-500"></span> Tuš a zlato
+            </button>
+            <button onclick="setTheme('frost')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#0e1a24] border border-cyan-300"></span> Severný mráz
+            </button>
+            <button onclick="setTheme('dusk')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#1a1028] border border-purple-400"></span> Súmrak a čary
+            </button>
+            <button onclick="setTheme('desert')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#2a1c10] border border-amber-500"></span> Piesočná púšť
+            </button>
+            <button onclick="setTheme('slate')" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#1c1f24] border border-slate-400"></span> Kamenná kobka
+            </button>
+        </div>
+
+        <!-- Menu rozsahu ovládania (mimo tém) -->
+        <div id="ui-scope-menu" class="hidden fixed z-[60] app-surface border rounded-2xl shadow-2xl p-1.5 text-xs space-y-1" style="right:8px; width:min(15rem, calc(100vw - 16px));">
+            <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider opacity-60">Rozsah ovládania</div>
+            <div class="grid grid-cols-3 gap-1 px-1 pb-1">
+                <button type="button" onclick="setUiComplexity('zaklad')" id="ui-level-zaklad" class="py-2 rounded-xl border font-bold text-[10px]">Základ</button>
+                <button type="button" onclick="setUiComplexity('bezne')" id="ui-level-bezne" class="py-2 rounded-xl border font-bold text-[10px]">Bežné</button>
+                <button type="button" onclick="setUiComplexity('vsetko')" id="ui-level-vsetko" class="py-2 rounded-xl border font-bold text-[10px]">Všetko</button>
+            </div>
+            <p class="px-2.5 pb-1 text-[10px] opacity-50 leading-snug">Základ = minimum, Bežné = výplne/filtre, Všetko = RPG, analýza, Karty naplno.</p>
+        </div>
+
+        <!-- Menu zobrazenia mapy (Atlas / Sieť) -->
+        <div id="map-display-menu" class="hidden fixed z-[60] app-surface border rounded-2xl shadow-2xl p-1.5 text-xs space-y-1" style="right:4.5rem; bottom:8px; width:min(16rem, calc(100vw - 5.5rem)); max-height:min(70vh, calc(100dvh - 24px)); overflow-y:auto;">
+            <div class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider opacity-60">Výplň uzlov</div>
+            <div class="grid grid-cols-3 gap-1 px-1 pb-1">
+                <button type="button" onclick="setNodeFillMode('icons')" id="fill-mode-icons" class="py-2 rounded-xl border font-bold text-[10px] leading-tight">Ikony</button>
+                <button type="button" onclick="setNodeFillMode('pattern')" id="fill-mode-pattern" class="py-2 rounded-xl border font-bold text-[10px] leading-tight">Vzory</button>
+                <button type="button" onclick="setNodeFillMode('image')" id="fill-mode-image" class="py-2 rounded-xl border font-bold text-[10px] leading-tight">Obrázky</button>
+            </div>
+            <div class="px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider opacity-60 border-t" style="border-color: var(--border-color)">Na mape zobraziť</div>
+            <button type="button" onclick="toggleMapDisplay('labels')" id="map-disp-labels" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5 font-semibold">
+                <i class="fa-solid fa-tags w-4 text-center opacity-70"></i> Popisky spojníc
+            </button>
+            <button type="button" onclick="toggleMapDisplay('icons')" id="map-disp-icons" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5 font-semibold">
+                <i class="fa-solid fa-icons w-4 text-center opacity-70"></i> Ikonky uzlov
+            </button>
+            <button type="button" onclick="toggleMapDisplay('fills')" id="map-disp-fills" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5 font-semibold">
+                <i class="fa-solid fa-image w-4 text-center opacity-70"></i> Výplne / obrázky
+            </button>
+            <button type="button" onclick="toggleMapDisplay('numbers')" id="map-disp-numbers" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5 font-semibold">
+                <i class="fa-solid fa-hashtag w-4 text-center opacity-70"></i> Čísla strán
+            </button>
+            <button type="button" onclick="toggleMapDisplay('customColors')" id="map-disp-customColors" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-black/15 flex items-center gap-2.5 font-semibold">
+                <i class="fa-solid fa-palette w-4 text-center opacity-70"></i> Vlastné farby
+            </button>
+            <p class="px-2.5 pb-1 text-[10px] opacity-50 leading-snug">Vypnuté „Vlastné farby“ = jednotný obrys. Nastavenie platí aj pre tlač.</p>
+        </div>
+
+        <!-- Riadok 2: väčšie pohľady na touch -->
+        <div class="grid grid-cols-4 sm:flex items-center app-card border rounded-2xl p-1 shrink-0 gap-0.5">
+            <button onclick="setViewMode('tree')" id="view-btn-tree" class="view-tab-btn justify-center min-h-[2.75rem] sm:min-h-0 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-[11px] font-bold transition flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1" title="Atlas – prehľad celej mapy (ideálne na PC)">
+                <i class="fa-solid fa-sitemap text-sm"></i>
                 <span>Atlas</span>
             </button>
-            <button onclick="setViewMode('web')" id="view-btn-web" class="view-tab-btn justify-center px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1" title="Silová sieť (Pavučina)">
-                <i class="fa-solid fa-diagram-project"></i>
+            <button onclick="setViewMode('web')" id="view-btn-web" class="view-tab-btn justify-center min-h-[2.75rem] sm:min-h-0 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-[11px] font-bold transition flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1" title="Silová sieť (Pavučina)">
+                <i class="fa-solid fa-diagram-project text-sm"></i>
                 <span>Sieť</span>
             </button>
-            <button onclick="setViewMode('compass')" id="view-btn-compass" class="view-tab-btn justify-center px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1" title="Reading loop – karty na čítanie jednou rukou (ideálne na mobile)">
-                <i class="fa-solid fa-compass"></i>
+            <button onclick="setViewMode('compass')" id="view-btn-compass" class="view-tab-btn justify-center min-h-[2.75rem] sm:min-h-0 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-[11px] font-bold transition flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1" title="Reading loop – karty na čítanie jednou rukou (ideálne na mobile)">
+                <i class="fa-solid fa-compass text-sm"></i>
                 <span>Karty</span>
             </button>
-            <button onclick="setViewMode('worldmap')" id="view-btn-worldmap" class="view-tab-btn justify-center px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1" title="Ilustračná mapa sveta so špendlíkmi">
-                <i class="fa-solid fa-map"></i>
+            <button onclick="setViewMode('worldmap')" id="view-btn-worldmap" class="view-tab-btn justify-center min-h-[2.75rem] sm:min-h-0 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-[11px] font-bold transition flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1" title="Ilustračná mapa sveta so špendlíkmi">
+                <i class="fa-solid fa-map text-sm"></i>
                 <span>Svet</span>
             </button>
         </div>
@@ -601,11 +953,11 @@
                 </div>
 
                 <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                    <button onclick="cycleGraphFilter()" id="btn-graph-filter" class="px-2 py-1 rounded-lg font-semibold transition flex items-center gap-1 app-card border" title="Filter hustoty: všetko → fokus → trasa → nepreskúmané">
+                    <button onclick="cycleGraphFilter()" id="btn-graph-filter" class="ui-medium-only px-2 py-1 rounded-lg font-semibold transition flex items-center gap-1 app-card border" title="Filter hustoty: všetko → fokus → trasa → nepreskúmané">
                         <i class="fa-solid fa-eye"></i>
                         <span id="btn-graph-filter-label">Všetko</span>
                     </button>
-                    <button onclick="cleanupEmptyParallelEdges()" class="px-2 py-1 rounded-lg font-semibold transition app-card border" title="Zlúčiť prázdne paralelné spojnice">
+                    <button onclick="cleanupEmptyParallelEdges()" class="ui-medium-only px-2 py-1 rounded-lg font-semibold transition app-card border" title="Zlúčiť prázdne paralelné spojnice">
                         <i class="fa-solid fa-broom"></i>
                     </button>
                     <div class="flex items-center app-card border rounded-lg px-1.5 py-0.5">
@@ -636,27 +988,39 @@
                 <span class="text-[8px] sm:text-[9px] font-bold opacity-75 leading-none">J</span>
             </div>
 
-            <!-- Plávajúce tlačidlá na ovládanie kamery jedným palcom -->
-            <div class="no-print absolute bottom-2.5 right-2.5 z-20 flex flex-col gap-1 app-surface/90 backdrop-blur-md border p-1 rounded-2xl shadow-xl">
-                <button onclick="jumpToLastEditedNode()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-xs hover:opacity-80 transition" title="Posledný pridaný / upravený bod">
+            <!-- Plávajúce tlačidlá – väčšie na touch -->
+            <div class="no-print absolute bottom-2.5 right-2.5 z-20 flex flex-col gap-1.5 app-surface/90 backdrop-blur-md border p-1.5 rounded-2xl shadow-xl">
+                <button id="map-display-btn" onclick="toggleMapDisplayMenu()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Čo zobraziť na mape">
+                    <i class="fa-solid fa-layer-group" style="color: var(--accent)"></i>
+                </button>
+                <button onclick="openTransitionsSummary()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Súhrn prechodov">
+                    <i class="fa-solid fa-list-ul" style="color: var(--accent)"></i>
+                </button>
+                <button onclick="triggerPrintAtlas()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Vytlačiť atlas">
+                    <i class="fa-solid fa-print text-sky-400"></i>
+                </button>
+                <button onclick="jumpToLastEditedNode()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Posledný pridaný / upravený bod">
                     <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent)"></i>
                 </button>
-                <button onclick="centerOnCurrentNode()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-xs hover:opacity-80 transition" title="Vycentrovať na aktuálnu stranu">
+                <button onclick="centerOnCurrentNode()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Vycentrovať na aktuálnu stranu">
                     <i class="fa-solid fa-crosshairs" style="color: var(--accent)"></i>
                 </button>
-                <button onclick="zoomByFactor(1.25)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-xs hover:opacity-80 transition" title="Priblížiť">
+                <button onclick="zoomByFactor(1.25)" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Priblížiť mapu">
                     <i class="fa-solid fa-plus"></i>
                 </button>
-                <button onclick="zoomByFactor(0.8)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-xs hover:opacity-80 transition" title="Oddialiť">
+                <button onclick="zoomByFactor(0.8)" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Oddialiť mapu">
                     <i class="fa-solid fa-minus"></i>
                 </button>
-                <button onclick="fitGraphToScreen()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-xs hover:opacity-80 transition" title="Zobraziť celú mapu">
+                <button onclick="fitGraphToScreen()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Zobraziť celú mapu">
                     <i class="fa-solid fa-expand"></i>
                 </button>
-                <button id="btn-tree-orient" onclick="toggleTreeOrientation()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-xs hover:opacity-80 transition" title="Tok príbehu: vertikálny ↔ horizontálny (Atlas aj Sieť). S/V/J/Z ostávajú geografické.">
+                <button onclick="resetBrowserZoom()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-[10px] font-extrabold hover:opacity-80 transition sm:hidden" title="Obnoviť stránku na 100 % (Safari)">
+                    100%
+                </button>
+                <button id="btn-tree-orient" onclick="toggleTreeOrientation()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Tok príbehu: vertikálny ↔ horizontálny (Atlas aj Sieť). S/V/J/Z ostávajú geografické.">
                     <i class="fa-solid fa-arrows-up-down" style="color: var(--accent)"></i>
                 </button>
-                <button onclick="autoLayoutCurrentView()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-xs hover:opacity-80 transition" title="Automaticky usporiadať (Atlas / Sieť)">
+                <button onclick="autoLayoutCurrentView()" class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl app-card border flex items-center justify-center text-sm sm:text-xs hover:opacity-80 transition" title="Automaticky usporiadať (Atlas / Sieť)">
                     <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
                 </button>
             </div>
@@ -689,18 +1053,19 @@
             <!-- Tenký RPG pruh (len pri profile RPG) -->
             <div id="compass-rpg-strip" class="hidden sticky top-0 z-10 border-b px-3 py-2 app-surface/95" style="border-color: var(--border-color)">
                 <div class="max-w-3xl mx-auto flex flex-wrap items-center gap-2 text-xs">
-                    <div class="flex items-center gap-1 shrink-0">
-                        <button type="button" onclick="rollDice('1k6'); renderCompassRpgStrip();" class="px-2.5 py-1.5 rounded-xl app-accent-btn font-bold">1k6</button>
-                        <button type="button" onclick="rollDice('2k6'); renderCompassRpgStrip();" class="px-2.5 py-1.5 rounded-xl app-accent-btn font-bold">2k6</button>
-                        <button type="button" onclick="rollDice('0-9'); renderCompassRpgStrip();" class="px-2.5 py-1.5 rounded-xl app-card border font-bold">0–9</button>
+                    <div id="compass-dice-kit" class="flex items-center gap-1 shrink-0 overflow-x-auto max-w-[55vw]"></div>
+                    <div class="ui-medium-only flex items-center gap-0.5 shrink-0">
+                        <button type="button" onclick="changeDiceCount(-1)" class="w-7 h-7 rounded-lg app-card border font-bold">−</button>
+                        <span id="compass-dice-count" class="font-extrabold min-w-[1.25rem] text-center">1</span>
+                        <button type="button" onclick="changeDiceCount(1)" class="w-7 h-7 rounded-lg app-card border font-bold">+</button>
                     </div>
                     <div id="compass-dice-result" class="px-2 py-1 rounded-lg bg-black/15 font-bold min-w-[4.5rem] text-center">—</div>
-                    <div id="compass-rpg-stats" class="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto"></div>
+                    <div id="compass-rpg-stats" class="ui-full-only flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto"></div>
                     <button type="button" onclick="toggleRightDrawer('rpg')" class="px-2 py-1.5 rounded-xl app-card border font-semibold shrink-0" title="Celá prievodka">
                         <i class="fa-solid fa-expand"></i>
                     </button>
                 </div>
-                <div class="max-w-3xl mx-auto mt-1.5 flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                <div class="ui-full-only max-w-3xl mx-auto mt-1.5 flex items-center gap-1.5 overflow-x-auto pb-0.5">
                     <div id="compass-rpg-inv" class="flex items-center gap-1.5"></div>
                     <input type="text" id="compass-new-item" placeholder="+ predmet"
                         class="w-28 shrink-0 px-2 py-1 rounded-lg app-card border text-[10px] focus:outline-none"
@@ -758,7 +1123,7 @@
                     <div id="compass-outgoing-list" class="grid grid-cols-1 gap-2"></div>
                 </div>
 
-                <!-- Mapovanie priamo v Kartách: ísť na stranu + pridať voľbu s textom -->
+                <!-- Mapovanie priamo v Kartách -->
                 <div class="app-surface border rounded-2xl p-3 space-y-3">
                     <div class="text-[11px] font-bold uppercase tracking-wider opacity-60">Mapovanie · bez prepínania na atlas</div>
 
@@ -772,7 +1137,7 @@
                                 Ísť sem
                             </button>
                         </div>
-                        <div id="compass-recent-goto" class="flex flex-wrap gap-1"></div>
+                        <div id="compass-recent-goto" class="ui-medium-only flex flex-wrap gap-1"></div>
                     </div>
 
                     <div class="space-y-1.5 pt-1 border-t" style="border-color: var(--border-color)">
@@ -780,11 +1145,11 @@
                         <input type="text" id="compass-quick-target" inputmode="numeric" placeholder="Jeden cieľ (napr. 14) — nie 14, 8"
                             class="w-full px-3 py-2.5 rounded-xl app-card border text-sm font-extrabold focus:outline-none"
                             onkeydown="if(event.key==='Enter') document.getElementById('compass-quick-note').focus()">
-                        <div id="compass-recent-targets" class="flex flex-wrap gap-1"></div>
+                        <div id="compass-recent-targets" class="ui-medium-only flex flex-wrap gap-1"></div>
                         <input type="text" id="compass-quick-note" placeholder="Text práve tejto voľby (napr. Vyliezť na vežu…)"
                             class="w-full px-3 py-2.5 rounded-xl app-card border text-sm focus:outline-none"
                             onkeydown="if(event.key==='Enter') handleCompassQuickBranch()">
-                        <div class="flex items-center gap-1 flex-wrap">
+                        <div class="ui-medium-only flex items-center gap-1 flex-wrap">
                             <button type="button" onclick="toggleCompassEdgeTag('item')" data-cetag="item" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">🔑</button>
                             <button type="button" onclick="toggleCompassEdgeTag('dice')" data-cetag="dice" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">🎲</button>
                             <button type="button" onclick="toggleCompassEdgeTag('combat')" data-cetag="combat" class="compass-etag-btn px-2 py-1 rounded-lg app-card border text-[11px]">⚔️</button>
@@ -796,11 +1161,11 @@
                             <button type="button" onclick="handleCompassQuickBranch()" class="py-2.5 rounded-xl app-accent-btn font-bold text-sm flex items-center justify-center gap-1.5">
                                 <i class="fa-solid fa-plus"></i> Pridať voľbu
                             </button>
-                            <button type="button" onclick="compassDuplicateLastChoice()" class="py-2.5 rounded-xl app-card border font-bold text-sm flex items-center justify-center gap-1.5" title="Predvyplní posledný cieľ — zmeň text a pridaj">
+                            <button type="button" onclick="compassDuplicateLastChoice()" class="ui-medium-only py-2.5 rounded-xl app-card border font-bold text-sm flex items-center justify-center gap-1.5" title="Predvyplní posledný cieľ — zmeň text a pridaj">
                                 <i class="fa-solid fa-copy"></i> Duplikuj cieľ
                             </button>
                         </div>
-                        <p class="text-[10px] opacity-50 leading-snug">Vždy jedna voľba = jeden cieľ + jej text. Nedávne strany ťukni pre rýchle vyplnenie.</p>
+                        <p class="ui-medium-only text-[10px] opacity-50 leading-snug">Vždy jedna voľba = jeden cieľ + jej text. Nedávne strany ťukni pre rýchle vyplnenie.</p>
                     </div>
                 </div>
             </div>
@@ -955,14 +1320,33 @@
             <!-- Obsah B: RPG Prievodka postavy, inventár a kocky -->
             <div id="drawer-rpg-body" class="hidden flex-1 overflow-y-auto custom-scroll p-4 space-y-4 text-xs">
                 <div class="app-card border rounded-2xl p-3 space-y-2.5">
-                    <div class="font-bold uppercase tracking-wider text-[10px] opacity-70">Hod kockou / Tabuľka náhody</div>
-                    <div class="grid grid-cols-3 gap-1.5">
-                        <button onclick="rollDice('1k6')" class="py-2 rounded-xl app-accent-btn font-bold">🎲 1k6</button>
-                        <button onclick="rollDice('2k6')" class="py-2 rounded-xl app-accent-btn font-bold">🎲 2k6</button>
-                        <button onclick="rollDice('0-9')" class="py-2 rounded-xl app-accent-btn font-bold">🔢 0–9</button>
+                    <div class="font-bold uppercase tracking-wider text-[10px] opacity-70">Hod kockou</div>
+                    <div id="dice-type-row" class="flex gap-1.5 overflow-x-auto pb-0.5"></div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="opacity-70 font-semibold">Počet</span>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="changeDiceCount(-1)" class="w-8 h-8 rounded-lg app-surface border font-bold">−</button>
+                            <span id="dice-count-label" class="font-extrabold min-w-[2rem] text-center">1</span>
+                            <button type="button" onclick="changeDiceCount(1)" class="w-8 h-8 rounded-lg app-surface border font-bold">+</button>
+                        </div>
                     </div>
+                    <button type="button" onclick="throwSelectedDice()" class="w-full py-2.5 rounded-xl app-accent-btn font-bold text-sm">
+                        <i class="fa-solid fa-dice mr-1"></i> Hodiť na stôl
+                    </button>
                     <div id="dice-result-box" class="text-center py-2 rounded-xl bg-black/20 font-bold text-sm">
-                        Klikni pre hod kockou
+                        Zvoľ kocku a počet
+                    </div>
+                    <div class="pt-1 border-t space-y-2" style="border-color: var(--border-color)">
+                        <div class="font-bold uppercase tracking-wider text-[10px] opacity-70">Sada kociek tejto knihy</div>
+                        <p class="text-[10px] opacity-55 leading-snug">Napr. <code>1k6</code>, <code>2k20</code> — ostane pri knihe natrvalo.</p>
+                        <div class="flex gap-1.5">
+                            <input type="text" id="kit-dice-expr" placeholder="2k6 alebo k20" class="flex-1 min-w-0 px-2 py-1.5 rounded-xl app-surface border text-xs focus:outline-none"
+                                onkeydown="if(event.key==='Enter') addDiceToBookKit()">
+                            <button type="button" onclick="addDiceToBookKit()" class="px-2.5 py-1.5 rounded-xl app-accent-btn font-bold text-xs">+ do sady</button>
+                        </div>
+                        <div id="book-dice-kit-list" class="flex flex-wrap gap-1.5"></div>
+                        <div class="font-bold uppercase tracking-wider text-[10px] opacity-70 pt-1">Rýchle predvoľby</div>
+                        <div id="dice-preset-add-row" class="flex flex-wrap gap-1"></div>
                     </div>
                 </div>
 
@@ -1028,21 +1412,21 @@
                     class="flex-1 min-w-0 px-2.5 py-1.5 rounded-xl app-card border text-xs focus:outline-none"
                     onkeydown="if(event.key==='Enter') handleQuickBranchSubmit()">
 
-                <div class="flex items-center gap-0.5 shrink-0">
+                <div class="ui-medium-only flex items-center gap-0.5 shrink-0">
                     <button type="button" onclick="toggleQuickDirection('N')" data-dir="N" class="quick-dir-btn px-1.5 py-1 rounded-lg app-card border font-bold" title="Sever">S</button>
                     <button type="button" onclick="toggleQuickDirection('E')" data-dir="E" class="quick-dir-btn px-1.5 py-1 rounded-lg app-card border font-bold" title="Východ">V</button>
                     <button type="button" onclick="toggleQuickDirection('S')" data-dir="S" class="quick-dir-btn px-1.5 py-1 rounded-lg app-card border font-bold" title="Juh">J</button>
                     <button type="button" onclick="toggleQuickDirection('W')" data-dir="W" class="quick-dir-btn px-1.5 py-1 rounded-lg app-card border font-bold" title="Západ">Z</button>
                 </div>
 
-                <div class="flex items-center gap-0.5 shrink-0">
+                <div class="ui-medium-only flex items-center gap-0.5 shrink-0">
                     <button type="button" onclick="toggleQuickNodeType('item')" data-qtype="item" class="quick-type-btn px-1.5 py-1 rounded-lg app-card border" title="Predmet / Kľúč">🔑</button>
                     <button type="button" onclick="toggleQuickNodeType('win')" data-qtype="win" class="quick-type-btn px-1.5 py-1 rounded-lg app-card border" title="Víťazstvo">🏆</button>
                     <button type="button" onclick="toggleQuickNodeType('end')" data-qtype="end" class="quick-type-btn px-1.5 py-1 rounded-lg app-card border" title="Koniec deja (uzavretý príbeh)">🏁</button>
                     <button type="button" onclick="toggleQuickNodeType('death')" data-qtype="death" class="quick-type-btn px-1.5 py-1 rounded-lg app-card border" title="Smrť">💀</button>
                 </div>
 
-                <div class="flex items-center gap-0.5 shrink-0 border-l pl-1.5 ml-0.5" style="border-color: var(--border-color)" title="Štítok voľby na spojnici">
+                <div class="ui-medium-only flex items-center gap-0.5 shrink-0 border-l pl-1.5 ml-0.5" style="border-color: var(--border-color)" title="Štítok voľby na spojnici">
                     <button type="button" onclick="toggleQuickEdgeTag('item')" data-etag="item" class="quick-etag-btn px-1.5 py-1 rounded-lg app-card border" title="Štítok: predmet">🔑</button>
                     <button type="button" onclick="toggleQuickEdgeTag('dice')" data-etag="dice" class="quick-etag-btn px-1.5 py-1 rounded-lg app-card border" title="Štítok: kocka">🎲</button>
                     <button type="button" onclick="toggleQuickEdgeTag('combat')" data-etag="combat" class="quick-etag-btn px-1.5 py-1 rounded-lg app-card border" title="Štítok: boj">⚔️</button>
@@ -1137,8 +1521,8 @@
             <!-- Typ strany -->
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
                 <button onclick="setNodeStatus('normal')" data-status="normal" class="nd-status-btn py-2 px-2 rounded-xl border font-semibold">Priechod</button>
-                <button onclick="setNodeStatus('item')" data-status="item" class="nd-status-btn py-2 px-2 rounded-xl border font-semibold">🔑 Predmet</button>
-                <button onclick="setNodeStatus('win')" data-status="win" class="nd-status-btn py-2 px-2 rounded-xl border font-semibold">🏆 Víťazstvo</button>
+                <button onclick="setNodeStatus('item')" data-status="item" class="nd-status-btn py-2 px-2 rounded-xl border font-semibold ui-medium-only">🔑 Predmet</button>
+                <button onclick="setNodeStatus('win')" data-status="win" class="nd-status-btn py-2 px-2 rounded-xl border font-semibold ui-medium-only">🏆 Víťazstvo</button>
                 <button onclick="setNodeStatus('end')" data-status="end" class="nd-status-btn py-2 px-2 rounded-xl border font-semibold">🏁 Koniec deja</button>
                 <button onclick="setNodeStatus('death')" data-status="death" class="nd-status-btn py-2 px-2 rounded-xl border font-semibold">💀 Smrť</button>
             </div>
@@ -1149,19 +1533,38 @@
                     <label class="block text-[11px] font-bold uppercase tracking-wider opacity-70">Symbol miesta / objektu</label>
                     <span id="nd-icon-lock-hint" class="hidden text-[10px] font-semibold text-amber-400">🔒 Uzamknuté (koniec deja má vlastný symbol)</span>
                 </div>
-                <div id="nd-icon-palette" class="grid grid-cols-7 gap-1.5"></div>
+                <div id="nd-icon-palette" class="pick-ribbon">
+                    <button type="button" class="nd-carousel-btn app-card border" onclick="nudgeDetailIcon(-1)" aria-label="Predošlý symbol"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="pick-ribbon-frame">
+                        <div class="pick-ribbon-cursor" aria-hidden="true"></div>
+                        <div class="pick-ribbon-window" id="nd-icon-ribbon" data-ribbon="icon"></div>
+                    </div>
+                    <button type="button" class="nd-carousel-btn app-card border" onclick="nudgeDetailIcon(1)" aria-label="Ďalší symbol"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div id="nd-icon-label" class="text-center text-[11px] font-bold opacity-80">Bez symbolu</div>
             </div>
 
             <!-- Farba bubliny -->
-            <div class="space-y-1.5">
+            <div class="ui-medium-only space-y-1.5">
                 <label class="block text-[11px] font-bold uppercase tracking-wider opacity-70">Farba strany</label>
                 <div id="nd-color-palette" class="flex items-center gap-2 flex-wrap"></div>
             </div>
 
             <!-- Tvar uzla -->
-            <div class="space-y-1.5">
+            <div class="ui-medium-only space-y-1.5">
                 <label class="block text-[11px] font-bold uppercase tracking-wider opacity-70">Tvar značky</label>
                 <div id="nd-shape-palette" class="grid grid-cols-5 gap-1.5 text-[11px]"></div>
+
+                <label class="ui-medium-only fill-terrain-ui block text-[11px] font-bold uppercase tracking-wider opacity-70 mt-2">Výplň miesta (terén)</label>
+                <div id="nd-terrain-palette" class="pick-ribbon ui-medium-only fill-terrain-ui">
+                    <button type="button" class="nd-carousel-btn app-card border" onclick="nudgeDetailTerrain(-1)" aria-label="Predošlá výplň"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="pick-ribbon-frame">
+                        <div class="pick-ribbon-cursor" aria-hidden="true"></div>
+                        <div class="pick-ribbon-window" id="nd-terrain-ribbon" data-ribbon="terrain"></div>
+                    </div>
+                    <button type="button" class="nd-carousel-btn app-card border" onclick="nudgeDetailTerrain(1)" aria-label="Ďalšia výplň"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div id="nd-terrain-label" class="ui-medium-only fill-terrain-ui text-center text-[11px] font-bold opacity-80">Hladká</div>
             </div>
 
             <!-- Poznámka k strane -->
@@ -1423,6 +1826,25 @@
         </div>
     </div>
 
+    <!-- SÚHRN PRECHODOV (ako register pri tlači) -->
+    <div id="transitions-summary-modal" class="no-print hidden fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="app-surface border w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-3 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between gap-2 shrink-0">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-list-ul" style="color: var(--accent)"></i> Súhrn prechodov
+                </h3>
+                <button onclick="closeModalById('transitions-summary-modal')" class="p-2 rounded-xl app-card border text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-[11px] opacity-60 shrink-0">To isté, čo ide do tlače za mapou — prehľad strán a odchádzajúcich volieb.</p>
+            <div id="transitions-summary-list" class="flex-1 overflow-y-auto custom-scroll space-y-2 text-xs pr-0.5"></div>
+            <button type="button" onclick="closeModalById('transitions-summary-modal'); triggerPrintAtlas();" class="w-full py-2.5 rounded-xl app-accent-btn font-bold text-xs shrink-0">
+                <i class="fa-solid fa-print mr-1"></i> Vytlačiť atlas so súhrnom
+            </button>
+        </div>
+    </div>
+
     <!-- TLAČOVÝ ATLAS (VIDITEĽNÝ LEN PRI TLAČI) -->
     <div id="print-report-container" class="hidden p-6 bg-white text-black space-y-6">
         <div class="border-b-2 border-black pb-3 flex items-baseline justify-between">
@@ -1432,7 +1854,7 @@
             </div>
             <span class="text-xs text-gray-500">Gamebook Kartograf</span>
         </div>
-        <div id="print-svg-mount" class="border border-gray-300 rounded-xl p-2 bg-white"></div>
+        <div id="print-svg-mount" class="space-y-4"></div>
         <div class="print-page-break">
             <h2 class="text-lg font-bold border-b border-gray-400 pb-1 mb-3">Register strán a poznámok</h2>
             <div id="print-index-list" class="grid grid-cols-2 gap-3 text-xs"></div>
@@ -1440,25 +1862,60 @@
     </div>
 
     <!-- KONTEXTOVÁ LIŠTA AKCIÍ NAD UZLOM -->
-    <div id="node-action-bar" class="no-print app-surface border rounded-2xl shadow-2xl p-1 gap-0.5 items-center">
-        <button type="button" onclick="nodeBarContinue()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Pokračovať odtiaľto – zaostrí vetvenie">
-            <i class="fa-solid fa-plus" style="color: var(--accent)"></i><span>Vetviť</span>
-        </button>
-        <button type="button" onclick="nodeBarEdit()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Upraviť stranu">
-            <i class="fa-solid fa-pen"></i><span>Upraviť</span>
-        </button>
-        <button type="button" onclick="nodeBarConnect()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Prepojiť s inou stranou">
-            <i class="fa-solid fa-link"></i><span>Spoj</span>
-        </button>
-        <button type="button" onclick="nodeBarArrive()" class="px-2.5 py-2 rounded-xl app-accent-btn text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Sem som sa dostal">
-            <i class="fa-solid fa-flag"></i><span>Tu som</span>
-        </button>
-        <button type="button" onclick="nodeBarDelete()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap text-rose-400" title="Zmazať stranu">
-            <i class="fa-solid fa-trash"></i><span>Zmazať</span>
-        </button>
-        <button type="button" onclick="hideNodeActionBar()" class="w-8 h-8 rounded-xl app-card border flex items-center justify-center text-xs opacity-70" title="Zavrieť">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+    <div id="node-action-bar" class="no-print app-surface border rounded-2xl shadow-2xl">
+        <div class="nab-row">
+            <button type="button" onclick="nodeBarContinue()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Pokračovať odtiaľto – zaostrí vetvenie">
+                <i class="fa-solid fa-plus" style="color: var(--accent)"></i><span>Vetviť</span>
+            </button>
+            <button type="button" onclick="nodeBarEdit()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Upraviť stranu">
+                <i class="fa-solid fa-pen"></i><span>Upraviť</span>
+            </button>
+            <button type="button" onclick="nodeBarConnect()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Prepojiť s inou stranou">
+                <i class="fa-solid fa-link"></i><span>Spoj</span>
+            </button>
+            <button type="button" onclick="nodeBarArrive()" class="px-2.5 py-2 rounded-xl app-accent-btn text-[11px] font-bold flex items-center gap-1 whitespace-nowrap" title="Sem som sa dostal">
+                <i class="fa-solid fa-flag"></i><span>Tu som</span>
+            </button>
+            <button type="button" id="nab-delete-btn" onclick="nodeBarDelete()" class="px-2.5 py-2 rounded-xl app-card border text-[11px] font-bold flex items-center gap-1 whitespace-nowrap text-rose-400" title="Zmazať stranu">
+                <i class="fa-solid fa-trash"></i><span>Zmazať</span>
+            </button>
+            <button type="button" onclick="hideNodeActionBar()" class="w-8 h-8 rounded-xl app-card border flex items-center justify-center text-xs opacity-70" title="Zavrieť">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="nab-pickers ui-medium-only">
+            <div class="nab-carousel" data-kind="symbol">
+                <button type="button" class="nab-carousel-btn app-card border" onclick="nudgeNodeBarPicker('symbol', -1)" aria-label="Predošlý symbol"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="nab-carousel-stage" id="nab-symbol-stage" title="Potiahni alebo šípky">
+                    <div id="nab-symbol-face" class="nab-face">·</div>
+                    <div id="nab-symbol-label" class="nab-face-label">Symbol</div>
+                </div>
+                <button type="button" class="nab-carousel-btn app-card border" onclick="nudgeNodeBarPicker('symbol', 1)" aria-label="Ďalší symbol"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="nab-carousel fill-terrain-ui" data-kind="terrain">
+                <button type="button" class="nab-carousel-btn app-card border" onclick="nudgeNodeBarPicker('terrain', -1)" aria-label="Predošlá výplň"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="nab-carousel-stage" id="nab-terrain-stage" title="Potiahni alebo šípky">
+                    <div id="nab-terrain-face" class="nab-face"></div>
+                    <div id="nab-terrain-label" class="nab-face-label">Výplň</div>
+                </div>
+                <button type="button" class="nab-carousel-btn app-card border" onclick="nudgeNodeBarPicker('terrain', 1)" aria-label="Ďalšia výplň"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animovaný hod kockami (stolík) -->
+    <div id="dice-table-overlay" class="no-print" onclick="if(event.target===this) closeDiceTable()">
+        <div id="dice-table" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between gap-2 text-white/90">
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider opacity-70 font-bold">Hod na stôl</div>
+                    <div id="dice-table-title" class="font-bold text-sm">3 × k6</div>
+                </div>
+                <button type="button" onclick="closeDiceTable()" class="w-9 h-9 rounded-xl bg-white/10 border border-white/15 text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="dice-table-felt"></div>
+            <div id="dice-table-sum" class="text-center text-white font-extrabold text-lg">—</div>
+        </div>
     </div>
 
     <!-- KONTEXTOVÁ LIŠTA NAD SPOJNICOU -->
@@ -1480,10 +1937,11 @@
         <span id="toast-text">Uložené</span>
     </div>
 
+    <script src="assets/terrains.js"></script>
     <script>
         /**
-         * GAMEBOOK KARTOGRAF v2.8
-         * Kompletná single-file aplikácia – Karty = reading loop (mobile), Mapa = atlas (PC).
+         * GAMEBOOK KARTOGRAF v3.2
+         * HTML + assets/terrains.js + terrain-icons (GitHub Pages / PWA).
          */
 
         const STORAGE_KEY = 'gb_kartograf_library_v13';
@@ -1501,6 +1959,21 @@
             { id: 'rect', label: 'Obdĺžnik' },
             { id: 'diamond', label: 'Kosoštv.' }
         ];
+
+        // Terény – prísne podľa režimu zobrazenia (ikony / vzory / obrázky)
+        function getTerrainChoices() {
+            const mode = getNodeFillMode();
+            if (window.KartografTerrains && typeof window.KartografTerrains.getList === 'function') {
+                return window.KartografTerrains.getList(mode === 'icons' ? 'icons' : mode);
+            }
+            return [{ id: '', label: 'Hladká', swatch: '#334155', group: 'Základ' }];
+        }
+
+        function getNodeFillMode() {
+            const m = appSettings.nodeFillMode || appSettings.terrainStyle || 'image';
+            if (m === 'pattern' || m === 'image' || m === 'icons') return m;
+            return 'image';
+        }
 
         const EDGE_TAGS = {
             '': { icon: '', label: 'Bežná' },
@@ -1521,11 +1994,51 @@
         ];
 
         const OBJECT_ICONS = [
-            '', '⚔️', '🛡️', '🗝️', '🧰', '🧪', '💀',
-            '👑', '🏰', '🔥', '📜', '🪙', '🕸️', '🚪',
-            '🐉', '👹', '🐺', '🕷️', '🏘️', '🏛️', '⛺',
-            '⛰️', '🕳️', '🌊', '🏝️', '⚓', '🐎', '🧭'
+            '', '⚔️', '🛡️', '🗡️', '🏹', '🪄', '🗝️', '🧰', '🧪', '💊',
+            '💀', '👻', '👑', '🏰', '🏯', '🔥', '❄️', '⚡', '📜', '🪙',
+            '💎', '🕸️', '🚪', '🪜', '🐉', '👹', '🐺', '🐻', '🕷️', '🐍',
+            '🏘️', '🏙️', '🏛️', '🗼', '🏪', '🍺', '🛒', '⚓', '🪦',
+            '⛺', '🏕️', '🛤️', '⛵', '🚧', '🪨', '📚', '🔒',
+            '⛰️', '🌲', '🕳️', '🌊', '🏝️', '🌋', '🌵', '🌉',
+            '📦', '⚠️', '🪤',
+            '🐎', '🧭', '🔔', '🕯️', '🛏️', '🍖', '🧀',
+            '🌌', '🚀', '🛸', '🪐', '☄️', '☀️', '⭐', '👽', '🛰️', '🌙'
         ];
+
+        const OBJECT_ICON_LABELS = {
+            '': 'Bez symbolu',
+            '⚔️': 'Boj', '🛡️': 'Štít', '🗡️': 'Meč', '🏹': 'Luk', '🪄': 'Mágia',
+            '🗝️': 'Kľúč', '🧰': 'Truhlica', '🧪': 'Elixír', '💊': 'Liek',
+            '💀': 'Smrť', '👻': 'Duch', '👑': 'Koruna', '🏰': 'Hrad', '🏯': 'Palác',
+            '🔥': 'Oheň', '❄️': 'Ľad', '⚡': 'Blesk', '📜': 'Zvitok', '🪙': 'Minca',
+            '💎': 'Drahokam', '🕸️': 'Pavučina', '🚪': 'Dvere', '🪜': 'Rebrík',
+            '🐉': 'Drak', '👹': 'Príšera', '🐺': 'Vlk', '🐻': 'Medveď', '🕷️': 'Pavúk', '🐍': 'Had',
+            '🏘️': 'Dedina', '🏙️': 'Mesto', '🏛️': 'Chrám', '🗼': 'Veža', '🏪': 'Obchod',
+            '🍺': 'Krčma', '🛒': 'Trh', '⚓': 'Prístav', '🪦': 'Cintorín',
+            '⛺': 'Stan', '🏕️': 'Tábor', '🛤️': 'Rázcestie', '⛵': 'Loď',
+            '🚧': 'Brána', '🪨': 'Útes', '📚': 'Knižnica', '🔒': 'Väzenie',
+            '⛰️': 'Hory', '🌲': 'Les', '🕳️': 'Jaskyňa', '🌊': 'Voda', '🏝️': 'Ostrov',
+            '🌋': 'Láva', '🌵': 'Púšť', '🌉': 'Most',
+            '📦': 'Poklad', '⚠️': 'Pasca', '🪤': 'Liečka',
+            '🐎': 'Kôň', '🧭': 'Kompas', '🔔': 'Zvon', '🕯️': 'Svieca', '🛏️': 'Oddych',
+            '🍖': 'Jedlo', '🧀': 'Sýr',
+            '🌌': 'Vesmír', '🚀': 'Vesm. loď', '🛸': 'UFO', '🪐': 'Planéta', '☄️': 'Asteroid',
+            '☀️': 'Slnko', '⭐': 'Hviezda', '👽': 'Mimozemšťan', '🛰️': 'Satelit', '🌙': 'Mesiac'
+        };
+
+        // Predvolený symbol pri zvolení výplne (ak uzol ešte nemá vlastný)
+        const TERRAIN_SYMBOLS = {
+            tavern: '🍺', city: '🏙️', shop: '🛒', harbor: '⚓', graveyard: '🪦', tower: '🗼',
+            library: '📚', prison: '🔒', camp: '🏕️', crossroads: '🛤️', ship: '⛵', gate: '🚧',
+            cliff: '🪨', battle: '⚔️', treasure: '📦', trap: '⚠️',
+            space: '🌌', spaceship: '🚀', planet: '🪐', asteroid: '☄️', sun: '☀️', star: '⭐',
+            alien: '👽', shipdoor: '🚪', shipcorridor: '🛸',
+            forest: '🌲', mountain: '⛰️', water: '🌊', cave: '🕳️', desert: '🌵', lava: '🌋',
+            bridge: '🌉', village: '🏘️', temple: '🏛️', castle: '🏰', sea: '⚓', road: '🛤️'
+        };
+
+        const RIBBON_VISIBLE = 6;
+        const RIBBON_CENTER = 2; // 3. slot zľava = kurzor
 
         // Koncové stavy s pevným symbolom a plnou výplňou kruhu
         const TERMINAL_STATUS_CONFIG = {
@@ -1575,8 +2088,37 @@
         let historyOnceToken = null;
 
         let appSettings = {
-            runCompareEnabled: false
+            runCompareEnabled: false,
+            nodeFillMode: 'image', // 'icons' | 'pattern' | 'image'
+            uiComplexity: 'bezne', // 'zaklad' | 'bezne' | 'vsetko'
+            mapDisplay: {
+                labels: true,
+                icons: true,
+                fills: true,
+                numbers: true,
+                customColors: true
+            },
+            diceType: 'k6',
+            diceCount: 1,
+            customDice: []
         };
+
+        const DICE_PRESETS = [
+            { id: 'k4', label: 'k4', sides: 4, min: 1 },
+            { id: 'k6', label: 'k6', sides: 6, min: 1 },
+            { id: 'k8', label: 'k8', sides: 8, min: 1 },
+            { id: 'k10', label: 'k10', sides: 10, min: 1 },
+            { id: 'k10z', label: 'k10 (0–9)', sides: 10, min: 0 },
+            { id: '2k10', label: '2×k10 %', sides: 10, min: 0, percentile: true },
+            { id: 'k12', label: 'k12', sides: 12, min: 1 },
+            { id: 'k20', label: 'k20', sides: 20, min: 1 },
+            { id: '0-9', label: '0–9', sides: 10, min: 0 }
+        ];
+
+        let nabSymbolIndex = 0;
+        let nabTerrainIndex = 0;
+        let nabPickerGesture = null;
+        let lastDiceResultText = '—';
 
         let qrScanStream = null;
         let qrScanLoopId = null;
@@ -1637,12 +2179,43 @@
             try {
                 appSettings = { ...appSettings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
             } catch (_) {}
+            if (!Array.isArray(appSettings.customDice)) appSettings.customDice = [];
+            if (!appSettings.diceType) appSettings.diceType = 'k6';
+            if (!appSettings.diceCount) appSettings.diceCount = 1;
+            // migrácia starých nastavení
+            if (!appSettings.nodeFillMode) {
+                appSettings.nodeFillMode = appSettings.terrainStyle === 'pattern' ? 'pattern' : 'image';
+            }
+            if (appSettings.uiComplexity === 'easy') appSettings.uiComplexity = 'zaklad';
+            if (appSettings.uiComplexity === 'medium') appSettings.uiComplexity = 'bezne';
+            if (appSettings.uiComplexity === 'full') appSettings.uiComplexity = 'vsetko';
+            if (!['zaklad', 'bezne', 'vsetko'].includes(appSettings.uiComplexity)) appSettings.uiComplexity = 'bezne';
+            appSettings.mapDisplay = {
+                labels: true,
+                icons: true,
+                fills: true,
+                numbers: true,
+                customColors: true,
+                ...(appSettings.mapDisplay || {})
+            };
+            applyUiComplexity(appSettings.uiComplexity);
+            updateNodeFillModeButtons();
+            updateMapDisplayButtons();
 
             setupSvgPointerAndZoom();
             setupChromeHelpers();
+            bindNodeBarCarouselGestures();
+            updateTerrainStyleButtons();
+            renderDiceControls();
             updateTreeOrientButton();
             updateGraphFilterButton();
             updateUndoRedoButtons();
+
+            // JPG: lokálne assets/terrain-icons → GitHub Pages (bez SVG miešania)
+            if (window.KartografTerrains?.preloadRasters) {
+                window.KartografTerrains.preloadRasters(() => refreshTerrainImagesAfterPreload());
+            }
+            ensureBookDiceKit(getActiveBook());
 
             // Reading loop: mobil → Karty, PC → Atlas (Strom); vždy rešpektuj poslednú voľbu
             const savedView = localStorage.getItem(VIEW_KEY);
@@ -1687,19 +2260,469 @@
             historyOnceToken = label; // pushHistory clears it – keep for this focus session
         }
 
+        function preferTerrainImages() {
+            return getNodeFillMode() === 'image';
+        }
+
+        function preferTerrainPatterns() {
+            return getNodeFillMode() === 'pattern';
+        }
+
+        function ensureTerrainPatterns(defsEl) {
+            const defs = defsEl || document.querySelector('#map-svg defs');
+            if (!defs || !window.KartografTerrains) return;
+            const mode = getNodeFillMode();
+            if (mode === 'pattern' && typeof window.KartografTerrains.install === 'function') {
+                window.KartografTerrains.install(defs);
+            }
+            if (mode === 'image' && typeof window.KartografTerrains.installImages === 'function') {
+                window.KartografTerrains.installImages(defs);
+            }
+            if (typeof window.KartografTerrains.ensureSoftMask === 'function') {
+                window.KartografTerrains.ensureSoftMask(defs);
+            }
+        }
+
+        function refreshTerrainImagesAfterPreload() {
+            ensureTerrainPatterns();
+            if (currentViewMode === 'tree' || currentViewMode === 'web') renderGraph();
+            if (actionBarNodeId) refreshNodeBarPickers(actionBarNodeId);
+            const modal = document.getElementById('node-detail-modal');
+            if (modal && !modal.classList.contains('hidden') && selectedNodeId) {
+                openNodeDetailModal(selectedNodeId);
+            }
+        }
+
+        function terrainFillForNode(node, fallbackFill) {
+            const tid = node?.terrain || '';
+            if (!tid || getNodeFillMode() !== 'pattern') return fallbackFill;
+            if (window.KartografTerrains && typeof window.KartografTerrains.fillUrl === 'function') {
+                return window.KartografTerrains.fillUrl(tid, false) || fallbackFill;
+            }
+            return fallbackFill;
+        }
+
+        function terrainImageUrlForNode(node) {
+            if (!node?.terrain || getNodeFillMode() !== 'image') return null;
+            const t = window.KartografTerrains?.byId?.(node.terrain);
+            return window.KartografTerrains?.imageSrc?.(t) || null;
+        }
+
+        function applyTerrainPreview(el, terrainId) {
+            if (!el) return;
+            const mode = getNodeFillMode();
+            const style = (window.KartografTerrains && window.KartografTerrains.previewStyle)
+                ? window.KartografTerrains.previewStyle(terrainId, mode === 'image')
+                : { backgroundColor: '#334155', backgroundImage: 'none' };
+            el.style.backgroundColor = style.backgroundColor || '#334155';
+            el.style.backgroundImage = style.backgroundImage || 'none';
+            el.style.backgroundSize = style.backgroundSize || 'cover';
+            el.style.backgroundPosition = style.backgroundPosition || 'center';
+        }
+
+        function setNodeFillMode(mode) {
+            appSettings.nodeFillMode = (mode === 'icons' || mode === 'pattern' || mode === 'image') ? mode : 'image';
+            appSettings.terrainStyle = appSettings.nodeFillMode === 'pattern' ? 'pattern' : 'image';
+            saveAppSettings();
+            updateNodeFillModeButtons();
+            const defs = document.querySelector('#map-svg defs');
+            if (defs) {
+                defs.querySelectorAll('pattern[id^="terrain-"]').forEach(p => {
+                    if (p.id === 'terrain-soft-fade') return;
+                    p.remove();
+                });
+            }
+            ensureTerrainPatterns();
+            refreshAllUI();
+            if (actionBarNodeId) refreshNodeBarPickers(actionBarNodeId);
+            const modal = document.getElementById('node-detail-modal');
+            if (modal && !modal.classList.contains('hidden') && selectedNodeId) {
+                openNodeDetailModal(selectedNodeId);
+            }
+            const labels = {
+                icons: 'Zobrazenie: len ikony v uzloch',
+                pattern: 'Zobrazenie: len SVG vzory',
+                image: 'Zobrazenie: len JPG obrázky'
+            };
+            showToast(labels[appSettings.nodeFillMode]);
+        }
+
+        function updateNodeFillModeButtons() {
+            const mode = getNodeFillMode();
+            ['icons', 'pattern', 'image'].forEach(k => {
+                document.getElementById('fill-mode-' + k)?.classList.toggle('app-accent-btn', k === mode);
+            });
+            applyFillModeBodyClass();
+        }
+
+        function updateTerrainStyleButtons() {
+            updateNodeFillModeButtons();
+        }
+
+        function applyUiComplexity(level) {
+            const map = { easy: 'zaklad', medium: 'bezne', full: 'vsetko' };
+            let lvl = map[level] || level;
+            if (!['zaklad', 'bezne', 'vsetko'].includes(lvl)) lvl = 'bezne';
+            document.body.classList.remove('ui-zaklad', 'ui-bezne', 'ui-vsetko', 'ui-easy', 'ui-medium', 'ui-full');
+            document.body.classList.add('ui-' + lvl);
+            ['zaklad', 'bezne', 'vsetko'].forEach(k => {
+                document.getElementById('ui-level-' + k)?.classList.toggle('app-accent-btn', k === lvl);
+            });
+            applyFillModeBodyClass();
+        }
+
+        function applyFillModeBodyClass() {
+            const mode = getNodeFillMode();
+            document.body.classList.remove('fill-icons', 'fill-pattern', 'fill-image');
+            document.body.classList.add('fill-' + mode);
+        }
+
+        function setUiComplexity(level) {
+            const map = { easy: 'zaklad', medium: 'bezne', full: 'vsetko' };
+            appSettings.uiComplexity = map[level] || (['zaklad', 'bezne', 'vsetko'].includes(level) ? level : 'bezne');
+            saveAppSettings();
+            applyUiComplexity(appSettings.uiComplexity);
+            const labels = {
+                zaklad: 'Rozsah: Základ',
+                bezne: 'Rozsah: Bežné',
+                vsetko: 'Rozsah: Všetko'
+            };
+            showToast(labels[appSettings.uiComplexity] || 'Rozsah zmenený');
+        }
+
+        function getMapDisplay() {
+            const d = appSettings.mapDisplay || {};
+            return {
+                labels: d.labels !== false,
+                icons: d.icons !== false,
+                fills: d.fills !== false,
+                numbers: d.numbers !== false,
+                customColors: d.customColors !== false
+            };
+        }
+
+        function toggleMapDisplay(key) {
+            if (!appSettings.mapDisplay) appSettings.mapDisplay = {};
+            const cur = getMapDisplay();
+            if (!(key in cur)) return;
+            appSettings.mapDisplay[key] = !cur[key];
+            saveAppSettings();
+            updateMapDisplayButtons();
+            if (currentViewMode === 'tree' || currentViewMode === 'web') renderGraph();
+        }
+
+        function updateMapDisplayButtons() {
+            const d = getMapDisplay();
+            Object.keys(d).forEach(k => {
+                document.getElementById('map-disp-' + k)?.classList.toggle('app-accent-btn', !!d[k]);
+            });
+        }
+
+        function hideFloatingMenus() {
+            document.getElementById('theme-menu')?.classList.add('hidden');
+            document.getElementById('ui-scope-menu')?.classList.add('hidden');
+            document.getElementById('map-display-menu')?.classList.add('hidden');
+        }
+
+        function toggleUiScopeMenu() {
+            hideMoreMenu();
+            const menu = document.getElementById('ui-scope-menu');
+            if (!menu) return;
+            const wasHidden = menu.classList.contains('hidden');
+            hideFloatingMenus();
+            if (wasHidden) {
+                menu.classList.remove('hidden');
+                const btn = document.getElementById('ui-scope-btn');
+                if (btn) {
+                    const r = btn.getBoundingClientRect();
+                    menu.style.top = Math.min(window.innerHeight - 160, r.bottom + 6) + 'px';
+                    menu.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+                    menu.style.bottom = 'auto';
+                }
+            }
+        }
+
+        function toggleMapDisplayMenu() {
+            const menu = document.getElementById('map-display-menu');
+            if (!menu) return;
+            const wasHidden = menu.classList.contains('hidden');
+            hideFloatingMenus();
+            hideMoreMenu();
+            if (wasHidden) {
+                menu.classList.remove('hidden');
+                updateMapDisplayButtons();
+                updateNodeFillModeButtons();
+                const btn = document.getElementById('map-display-btn');
+                const stack = btn?.parentElement;
+                const r = (stack || btn)?.getBoundingClientRect();
+                if (r) {
+                    // vľavo od bočného panela, zarovnané na spodok
+                    menu.style.top = 'auto';
+                    menu.style.bottom = Math.max(8, window.innerHeight - r.bottom) + 'px';
+                    menu.style.right = Math.max(8, window.innerWidth - r.left + 8) + 'px';
+                    menu.style.left = 'auto';
+                    menu.style.maxHeight = Math.min(window.innerHeight - 24, r.bottom - 8) + 'px';
+                }
+            }
+        }
+
+        function summaryShapeBoxStyle(shape) {
+            const base = 'position:relative;overflow:hidden;flex-shrink:0;border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;';
+            if (shape === 'square') return base + 'width:2.75rem;height:2.75rem;border-radius:0.35rem;';
+            if (shape === 'rounded') return base + 'width:2.75rem;height:2.75rem;border-radius:0.7rem;';
+            if (shape === 'rect') return base + 'width:3.1rem;height:2.1rem;border-radius:0.45rem;';
+            if (shape === 'diamond') return base + 'width:2.75rem;height:2.75rem;border-radius:0;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);';
+            return base + 'width:2.75rem;height:2.75rem;border-radius:9999px;';
+        }
+
+        function summaryPatternDataUrl(terrain) {
+            if (!terrain?.pattern || !terrain.id) return null;
+            const pid = 'sumpat_' + terrain.id;
+            const pat = String(terrain.pattern).replace(/id="terrain-[^"]+"/, `id="${pid}"`);
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">${pat}<rect width="64" height="64" fill="url(#${pid})"/></svg>`;
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        }
+
+        function buildSummaryThumbHtml(node) {
+            const term = TERMINAL_STATUS_CONFIG[node.status];
+            const mapDisp = getMapDisplay();
+            const fillMode = getNodeFillMode();
+            const shape = node.shape || 'circle';
+            const stroke = (mapDisp.customColors && node.color)
+                ? node.color
+                : (term ? term.stroke : 'var(--node-stroke)');
+            let bg = term ? term.fill : 'var(--node-bg)';
+            let imgHtml = '';
+            let overlayIcon = '';
+
+            if (term) {
+                overlayIcon = `<span style="position:absolute;font-size:1.2rem;line-height:1;z-index:2">${term.icon}</span>`;
+            } else {
+                const meta = (node.terrain && window.KartografTerrains?.byId)
+                    ? window.KartografTerrains.byId(node.terrain)
+                    : null;
+                if (mapDisp.fills && node.terrain) {
+                    if (fillMode === 'image') {
+                        const src = window.KartografTerrains?.imageSrc?.(meta);
+                        if (src) {
+                            bg = meta?.swatch || bg;
+                            imgHtml = `<img src="${escapeHtml(src)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">`;
+                        } else if (meta?.swatch) {
+                            bg = meta.swatch;
+                        }
+                    } else if (fillMode === 'pattern') {
+                        const dataUrl = summaryPatternDataUrl(meta);
+                        if (dataUrl) {
+                            bg = meta?.swatch || bg;
+                            imgHtml = `<img src="${dataUrl}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">`;
+                        } else if (meta?.swatch) {
+                            bg = meta.swatch;
+                        }
+                    }
+                } else if (mapDisp.customColors && node.color) {
+                    bg = node.color;
+                }
+                if (mapDisp.icons && (node.icon || (node.status === 'item' ? '🔑' : ''))) {
+                    overlayIcon = `<span style="position:absolute;top:1px;right:2px;font-size:0.7rem;line-height:1;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.65)">${node.icon || '🔑'}</span>`;
+                }
+            }
+
+            const numHtml = mapDisp.numbers
+                ? `<span style="position:relative;z-index:3;font-weight:800;font-size:0.72rem;color:#fff;text-shadow:0 0 2px #000,0 1px 2px rgba(0,0,0,.85),0 -1px 2px rgba(0,0,0,.85)">${escapeHtml(node.id)}</span>`
+                : '';
+
+            return `<div style="${summaryShapeBoxStyle(shape)}background:${bg};box-shadow:inset 0 0 0 1.5px ${stroke}">${imgHtml}${overlayIcon}${numHtml}</div>`;
+        }
+
+        function buildTransitionsSummaryHtml(book) {
+            const sortedNodes = Object.values(book.nodes).sort((a, b) => comparePageIds(a.id, b.id));
+            if (!sortedNodes.length) return '<div class="opacity-50 italic">Zatiaľ žiadne strany.</div>';
+            return sortedNodes.map(n => {
+                const term = TERMINAL_STATUS_CONFIG[n.status];
+                const outs = book.edges
+                    .filter(e => e.from === n.id)
+                    .map(e => {
+                        const tag = EDGE_TAGS[e.tag || '']?.icon || '';
+                        const dir = e.direction ? `[${COMPASS_DIR_META[e.direction]?.label || e.direction}] ` : '';
+                        return `<div class="opacity-90">→ <strong>${escapeHtml(e.to)}</strong>${tag ? ' ' + tag : ''}${e.note ? ` — ${escapeHtml(e.note)}` : ''}${dir ? ` <span class="opacity-55">${dir.trim()}</span>` : ''}</div>`;
+                    })
+                    .join('');
+
+                return `
+                    <div class="p-2.5 rounded-xl app-card border flex gap-2.5 items-start">
+                        ${buildSummaryThumbHtml(n)}
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold flex items-center gap-1.5 flex-wrap">
+                                <span>Strana ${escapeHtml(n.id)}</span>
+                                ${term ? `<span class="text-[10px] font-semibold opacity-70">${term.label}</span>` : ''}
+                                ${(!term && n.terrain) ? `<span class="text-[10px] opacity-55">${escapeHtml(window.KartografTerrains?.byId?.(n.terrain)?.label || n.terrain)}</span>` : ''}
+                            </div>
+                            ${n.note ? `<div class="mt-1 opacity-75 leading-snug">${escapeHtml(n.note)}</div>` : ''}
+                            <div class="mt-1.5 space-y-0.5">${outs || '<span class="opacity-45 italic">Bez odchádzajúcej voľby</span>'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function appendReadableNodeNumber(g, opts) {
+            const {
+                y = 4.5,
+                fontSize = 13,
+                text,
+                ghost = false,
+                strongFill = false
+            } = opts;
+            // Pri silnej výplni (vzor/obrázok/terminal) vždy biele číslo + tmavý obrys
+            const numText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            numText.setAttribute('y', String(y));
+            numText.setAttribute('text-anchor', 'middle');
+            numText.setAttribute('font-size', String(fontSize));
+            numText.setAttribute('font-weight', '800');
+            numText.setAttribute('fill', strongFill ? '#ffffff' : (opts.fill || 'var(--node-text)'));
+            if (strongFill) {
+                numText.setAttribute('stroke', 'rgba(0,0,0,0.78)');
+                numText.setAttribute('stroke-width', '3.2');
+                numText.setAttribute('paint-order', 'stroke fill');
+                numText.setAttribute('stroke-linejoin', 'round');
+            }
+            if (ghost) numText.setAttribute('opacity', '0.7');
+            numText.textContent = text;
+            g.appendChild(numText);
+            return numText;
+        }
+
+        function openTransitionsSummary() {
+            const book = getActiveBook();
+            if (!book) return;
+            hideFloatingMenus();
+            const list = document.getElementById('transitions-summary-list');
+            if (list) list.innerHTML = buildTransitionsSummaryHtml(book);
+            document.getElementById('transitions-summary-modal')?.classList.remove('hidden');
+        }
+
+        function shapeImageCoverBox(shape, radius) {
+            // natiahnuť JPG na daný tvar (cover + mierny zoom kvôli mäkkému okraju)
+            const z = 1.12;
+            if (shape === 'square' || shape === 'rounded') {
+                const s = radius * 1.7 * z;
+                return { w: s, h: s };
+            }
+            if (shape === 'rect') {
+                return { w: radius * 2.35 * z, h: radius * 1.55 * z };
+            }
+            if (shape === 'diamond') {
+                const s = radius * 1.55 * 2 * z;
+                return { w: s, h: s };
+            }
+            const d = radius * 2 * z;
+            return { w: d, h: d };
+        }
+
+        function ensureTerrainEdgeBlurFilter(defs) {
+            if (!defs || defs.querySelector('#terrain-edge-blur')) return;
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const filter = document.createElementNS(svgNS, 'filter');
+            filter.setAttribute('id', 'terrain-edge-blur');
+            filter.setAttribute('x', '-35%');
+            filter.setAttribute('y', '-35%');
+            filter.setAttribute('width', '170%');
+            filter.setAttribute('height', '170%');
+            const blur = document.createElementNS(svgNS, 'feGaussianBlur');
+            blur.setAttribute('in', 'SourceGraphic');
+            blur.setAttribute('stdDeviation', '2.8');
+            filter.appendChild(blur);
+            defs.appendChild(filter);
+        }
+
+        function appendNodeTerrainPhoto(g, nodeId, shape, radius, imageUrl, defsEl) {
+            if (!imageUrl) return;
+            const defs = defsEl || document.querySelector('#map-svg defs');
+            if (!defs) return;
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const safe = String(nodeId).replace(/[^\w-]/g, '_');
+            const clipId = 'nclip_' + safe;
+            const maskId = 'nmask_' + safe;
+            defs.querySelector('#' + clipId)?.remove();
+            defs.querySelector('#' + maskId)?.remove();
+            ensureTerrainEdgeBlurFilter(defs);
+
+            // tvrdý clip = presný tvar uzla
+            const clip = document.createElementNS(svgNS, 'clipPath');
+            clip.setAttribute('id', clipId);
+            const clipHolder = document.createElementNS(svgNS, 'g');
+            appendNodeShapeEl(clipHolder, shape, radius, { fill: '#fff', stroke: 'none', strokeWidth: 0 });
+            if (clipHolder.firstChild) clip.appendChild(clipHolder.firstChild);
+            defs.appendChild(clip);
+
+            // mäkká maska = ten istý tvar + blur → okraje sa rozpíjú do výplne
+            const mask = document.createElementNS(svgNS, 'mask');
+            mask.setAttribute('id', maskId);
+            mask.setAttribute('maskUnits', 'userSpaceOnUse');
+            mask.setAttribute('maskContentUnits', 'userSpaceOnUse');
+            const softG = document.createElementNS(svgNS, 'g');
+            softG.setAttribute('filter', 'url(#terrain-edge-blur)');
+            appendNodeShapeEl(softG, shape, radius * 0.94, { fill: '#ffffff', stroke: 'none', strokeWidth: 0 });
+            mask.appendChild(softG);
+            defs.appendChild(mask);
+
+            const box = shapeImageCoverBox(shape, radius);
+            const img = document.createElementNS(svgNS, 'image');
+            img.setAttribute('x', String(-box.w / 2));
+            img.setAttribute('y', String(-box.h / 2));
+            img.setAttribute('width', String(box.w));
+            img.setAttribute('height', String(box.h));
+            img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+            img.setAttribute('href', imageUrl);
+            img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', imageUrl);
+            img.setAttribute('clip-path', 'url(#' + clipId + ')');
+            img.setAttribute('mask', 'url(#' + maskId + ')');
+            g.appendChild(img);
+        }
+
         function updateUndoRedoButtons() {
-            const u = document.getElementById('btn-undo');
-            const r = document.getElementById('btn-redo');
-            if (u) {
-                u.disabled = undoStack.length === 0;
-                u.classList.toggle('opacity-40', undoStack.length === 0);
-                u.title = undoStack.length ? `Späť: ${undoStack[undoStack.length - 1].label}` : 'Späť (Undo)';
+            const pairs = [
+                ['btn-undo', 'btn-undo-mobile', undoStack, 'Späť'],
+                ['btn-redo', 'btn-redo-mobile', redoStack, 'Znova']
+            ];
+            pairs.forEach(([deskId, mobId, stack, word]) => {
+                const disabled = stack.length === 0;
+                const title = disabled ? `${word}` : `${word}: ${stack[stack.length - 1].label}`;
+                [deskId, mobId].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.disabled = disabled;
+                    el.classList.toggle('opacity-40', disabled);
+                    el.title = title;
+                });
+            });
+        }
+
+        function hideMoreMenu() {
+            document.getElementById('more-menu')?.classList.add('hidden');
+        }
+
+        function toggleMoreMenu() {
+            const menu = document.getElementById('more-menu');
+            if (!menu) return;
+            hideFloatingMenus();
+            menu.classList.toggle('hidden');
+        }
+
+        function resetBrowserZoom() {
+            // Safari iPad: po dvojťuku obnov viewport na 100 %
+            const meta = document.getElementById('viewport-meta') || document.querySelector('meta[name="viewport"]');
+            if (meta) {
+                meta.setAttribute(
+                    'content',
+                    'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover'
+                );
             }
-            if (r) {
-                r.disabled = redoStack.length === 0;
-                r.classList.toggle('opacity-40', redoStack.length === 0);
-                r.title = redoStack.length ? `Znova: ${redoStack[redoStack.length - 1].label}` : 'Znova (Redo)';
-            }
+            try { document.documentElement.style.zoom = '1'; } catch (_) {}
+            try { document.body.style.zoom = '1'; } catch (_) {}
+            camera.scale = Math.min(Math.max(camera.scale, 0.22), 2.8);
+            applyCameraTransform();
+            showToast('Zobrazenie obnovené na 100 %');
         }
 
         function applyHistorySnapshot(snap) {
@@ -1822,7 +2845,7 @@
         }
 
         function appendNodeShapeEl(g, shape, radius, attrs) {
-            const { fill, stroke, strokeWidth, dashed, fillOpacity } = attrs;
+            const { fill, stroke, strokeWidth, dashed, fillOpacity, mask } = attrs;
             shape = shape || 'circle';
             let el;
             if (shape === 'square' || shape === 'rounded') {
@@ -1855,6 +2878,7 @@
             el.setAttribute('stroke-width', String(strokeWidth));
             if (dashed) el.setAttribute('stroke-dasharray', '4 3');
             if (fillOpacity != null) el.setAttribute('fill-opacity', String(fillOpacity));
+            if (mask) el.setAttribute('mask', mask);
             g.appendChild(el);
             return el;
         }
@@ -1899,11 +2923,28 @@
                 window.visualViewport.addEventListener('scroll', applyKeyboardOffset);
             }
 
-            document.addEventListener('pointerdown', (e) => {
-                const menu = document.getElementById('theme-menu');
-                if (menu && !menu.classList.contains('hidden') && !e.target.closest('#theme-menu') && !e.target.closest('#theme-menu-btn')) {
-                    menu.classList.add('hidden');
+            // iPad Safari: zabrániť pinch/gesture zoom stránky (mapa má vlastný zoom)
+            ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
+                document.addEventListener(evt, e => e.preventDefault(), { passive: false });
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#more-menu') && !e.target.closest('[onclick*="toggleMoreMenu"]')) {
+                    hideMoreMenu();
                 }
+            });
+
+            document.addEventListener('pointerdown', (e) => {
+                const floating = [
+                    ['#theme-menu', '#theme-menu-btn'],
+                    ['#ui-scope-menu', '#ui-scope-btn'],
+                    ['#map-display-menu', '#map-display-btn']
+                ];
+                floating.forEach(([menuSel, btnSel]) => {
+                    const menu = document.querySelector(menuSel);
+                    if (menu && !menu.classList.contains('hidden') && !e.target.closest(menuSel) && !e.target.closest(btnSel)) {
+                        menu.classList.add('hidden');
+                    }
+                });
                 const bar = document.getElementById('node-action-bar');
                 if (bar && bar.classList.contains('visible') && !e.target.closest('#node-action-bar') && !e.target.closest('.node-item')) {
                     hideNodeActionBar();
@@ -1918,8 +2959,10 @@
                 if (e.key === 'Escape') {
                     hideNodeActionBar();
                     hideEdgeActionBar();
+                    closeDiceTable();
                     cancelConnectMode();
-                    document.getElementById('theme-menu')?.classList.add('hidden');
+                    hideFloatingMenus();
+                    closeModalById('transitions-summary-modal');
                     stopInAppQrScanner();
                 }
                 const mod = e.ctrlKey || e.metaKey;
@@ -1992,7 +3035,12 @@
                         { name: 'Kondícia', val: 18, max: 20 },
                         { name: 'Šťastie', val: 9, max: 11 }
                     ],
-                    inventory: ['Meč', 'Hrdzavý kľúč']
+                    inventory: ['Meč', 'Hrdzavý kľúč'],
+                    diceKit: [
+                        { id: 'k6', label: 'k6', sides: 6, min: 1, count: 1 },
+                        { id: '2k6', label: '2k6', sides: 6, min: 1, count: 2 },
+                        { id: 'k20', label: 'k20', sides: 20, min: 1, count: 1 }
+                    ]
                 }
             };
             appData.activeBookId = id;
@@ -2017,7 +3065,19 @@
         }
 
         function toggleThemeMenu() {
-            document.getElementById('theme-menu').classList.toggle('hidden');
+            hideMoreMenu();
+            const menu = document.getElementById('theme-menu');
+            if (!menu) return;
+            const wasHidden = menu.classList.contains('hidden');
+            hideFloatingMenus();
+            if (!wasHidden) return;
+            menu.classList.remove('hidden');
+            const header = document.querySelector('header');
+            const bottom = header ? header.getBoundingClientRect().bottom : 56;
+            menu.style.top = Math.min(bottom + 6, window.innerHeight - 48) + 'px';
+            menu.style.right = '8px';
+            menu.style.left = 'auto';
+            menu.style.bottom = 'auto';
         }
 
         function setViewMode(mode, persist = true) {
@@ -2490,6 +3550,16 @@
             actionBarNodeId = nodeId;
 
             const bar = document.getElementById('node-action-bar');
+            const delBtn = document.getElementById('nab-delete-btn');
+            if (delBtn) {
+                const isStart = nodeId === book.startNodeId;
+                delBtn.classList.toggle('hidden', isStart);
+                delBtn.disabled = isStart;
+            }
+            const isTerminal = !!TERMINAL_STATUS_CONFIG[book.nodes[nodeId]?.status];
+            document.querySelector('#node-action-bar .nab-pickers')?.classList.toggle('is-terminal-hidden', isTerminal);
+            if (!isTerminal) refreshNodeBarPickers(nodeId);
+
             let x = clientX;
             let y = clientY;
 
@@ -2501,12 +3571,184 @@
                 y = rect.top + camera.y + node.y * camera.scale;
             }
 
-            positionFloatingBar(bar, x, y, Math.min(400, window.innerWidth - 16));
+            positionFloatingBar(bar, x, y, Math.min(360, window.innerWidth - 16));
         }
 
         function hideNodeActionBar() {
             actionBarNodeId = null;
             document.getElementById('node-action-bar')?.classList.remove('visible');
+        }
+
+        function refreshNodeBarPickers(nodeId) {
+            const book = getActiveBook();
+            const node = book?.nodes[nodeId];
+            if (!node) return;
+            const terrains = getTerrainChoices();
+
+            nabSymbolIndex = Math.max(0, OBJECT_ICONS.indexOf(node.icon || ''));
+            nabTerrainIndex = Math.max(0, terrains.findIndex(t => t.id === (node.terrain || '')));
+            paintNodeBarCarousels(false);
+        }
+
+        function paintNodeBarCarousels(applyToNode) {
+            const terrains = getTerrainChoices();
+            const icon = OBJECT_ICONS[nabSymbolIndex] || '';
+            const terrain = terrains[nabTerrainIndex] || terrains[0];
+            const face = document.getElementById('nab-symbol-face');
+            const label = document.getElementById('nab-symbol-label');
+            if (face) face.textContent = icon || '·';
+            if (label) label.textContent = OBJECT_ICON_LABELS[icon] || (icon || 'Symbol');
+
+            const tFace = document.getElementById('nab-terrain-face');
+            const tLabel = document.getElementById('nab-terrain-label');
+            applyTerrainPreview(tFace, terrain?.id || '');
+            if (tLabel) tLabel.textContent = terrain?.label || 'Výplň';
+
+            if (applyToNode && actionBarNodeId) {
+                const book = getActiveBook();
+                const node = book?.nodes[actionBarNodeId];
+                if (!node) return;
+                if (TERMINAL_STATUS_CONFIG[node.status]) return;
+                let changed = false;
+                const newTerrain = terrain?.id || '';
+                if ((node.terrain || '') !== newTerrain) {
+                    node.terrain = newTerrain;
+                    const suggested = TERRAIN_SYMBOLS[newTerrain];
+                    if (suggested && (!(node.icon || '') || Object.values(TERRAIN_SYMBOLS).includes(node.icon))) {
+                        node.icon = suggested;
+                        nabSymbolIndex = Math.max(0, OBJECT_ICONS.indexOf(suggested));
+                    }
+                    changed = true;
+                }
+                const finalIcon = OBJECT_ICONS[nabSymbolIndex] || '';
+                if ((node.icon || '') !== finalIcon) {
+                    node.icon = finalIcon;
+                    changed = true;
+                }
+                if (changed) {
+                    node.updatedAt = Date.now();
+                    saveAppData();
+                    refreshAllUI();
+                }
+            }
+        }
+
+        function nudgeNodeBarPicker(kind, delta) {
+            if (kind === 'symbol') {
+                const len = OBJECT_ICONS.length;
+                nabSymbolIndex = (nabSymbolIndex + delta + len) % len;
+            } else {
+                const terrains = getTerrainChoices();
+                const len = terrains.length || 1;
+                nabTerrainIndex = (nabTerrainIndex + delta + len) % len;
+            }
+            paintNodeBarCarousels(true);
+        }
+
+        function wrapIndex(idx, len) {
+            if (!len) return 0;
+            return ((idx % len) + len) % len;
+        }
+
+        function renderIconRibbon(selectedIndex) {
+            const win = document.getElementById('nd-icon-ribbon');
+            const label = document.getElementById('nd-icon-label');
+            if (!win) return;
+            const len = OBJECT_ICONS.length;
+            const sel = wrapIndex(selectedIndex, len);
+            win.innerHTML = '';
+            for (let slot = 0; slot < RIBBON_VISIBLE; slot++) {
+                const idx = wrapIndex(sel - RIBBON_CENTER + slot, len);
+                const ic = OBJECT_ICONS[idx] || '';
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'pick-ribbon-item' + (slot === RIBBON_CENTER ? ' is-center' : '');
+                item.textContent = ic || '·';
+                item.title = OBJECT_ICON_LABELS[ic] || 'Symbol';
+                item.onclick = () => {
+                    if (slot === RIBBON_CENTER) return;
+                    nudgeDetailIcon(slot - RIBBON_CENTER);
+                };
+                win.appendChild(item);
+            }
+            if (label) label.textContent = OBJECT_ICON_LABELS[OBJECT_ICONS[sel] || ''] || 'Symbol';
+        }
+
+        function renderTerrainRibbon(selectedIndex) {
+            const win = document.getElementById('nd-terrain-ribbon');
+            const label = document.getElementById('nd-terrain-label');
+            if (!win) return;
+            const terrains = getTerrainChoices();
+            const len = terrains.length || 1;
+            const sel = wrapIndex(selectedIndex, len);
+            win.innerHTML = '';
+            for (let slot = 0; slot < RIBBON_VISIBLE; slot++) {
+                const idx = wrapIndex(sel - RIBBON_CENTER + slot, len);
+                const t = terrains[idx] || terrains[0];
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'pick-ribbon-item' + (slot === RIBBON_CENTER ? ' is-center' : '');
+                item.title = t?.label || 'Výplň';
+                const sw = document.createElement('span');
+                sw.className = 'swatch';
+                applyTerrainPreview(sw, t?.id || '');
+                item.appendChild(sw);
+                item.onclick = () => {
+                    if (slot === RIBBON_CENTER) return;
+                    nudgeDetailTerrain(slot - RIBBON_CENTER);
+                };
+                win.appendChild(item);
+            }
+            if (label) label.textContent = terrains[sel]?.label || 'Výplň';
+        }
+
+        function bindNodeBarCarouselGestures() {
+            const targets = [
+                { id: 'nab-symbol-stage', fn: (d) => nudgeNodeBarPicker('symbol', d) },
+                { id: 'nab-terrain-stage', fn: (d) => nudgeNodeBarPicker('terrain', d) },
+                { id: 'nd-icon-ribbon', fn: (d) => nudgeDetailIcon(d) },
+                { id: 'nd-terrain-ribbon', fn: (d) => nudgeDetailTerrain(d) }
+            ];
+            targets.forEach(({ id, fn }) => {
+                const el = document.getElementById(id);
+                if (!el || el.dataset.swipeBound) return;
+                el.dataset.swipeBound = '1';
+                el.addEventListener('pointerdown', (e) => {
+                    if (e.button != null && e.button !== 0) return;
+                    nabPickerGesture = { id, x: e.clientX, y: e.clientY };
+                    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+                });
+                el.addEventListener('pointerup', (e) => {
+                    if (!nabPickerGesture || nabPickerGesture.id !== id) return;
+                    const dx = e.clientX - nabPickerGesture.x;
+                    const dy = e.clientY - nabPickerGesture.y;
+                    nabPickerGesture = null;
+                    if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy)) return;
+                    fn(dx < 0 ? 1 : -1);
+                });
+                el.addEventListener('pointercancel', () => { nabPickerGesture = null; });
+            });
+        }
+
+        function nudgeDetailIcon(delta) {
+            const book = getActiveBook();
+            const node = book?.nodes[selectedNodeId];
+            if (!node || TERMINAL_STATUS_CONFIG[node.status]) return;
+            let idx = OBJECT_ICONS.indexOf(node.icon || '');
+            if (idx < 0) idx = 0;
+            idx = wrapIndex(idx + delta, OBJECT_ICONS.length);
+            setNodeIcon(OBJECT_ICONS[idx]);
+        }
+
+        function nudgeDetailTerrain(delta) {
+            const book = getActiveBook();
+            const node = book?.nodes[selectedNodeId];
+            if (!node) return;
+            const terrains = getTerrainChoices();
+            let idx = terrains.findIndex(t => t.id === (node.terrain || ''));
+            if (idx < 0) idx = 0;
+            idx = wrapIndex(idx + delta, terrains.length);
+            setNodeTerrain(terrains[idx].id);
         }
 
         function showEdgeActionBar(edgeId, clientX, clientY) {
@@ -2582,6 +3824,11 @@
 
         function nodeBarDelete() {
             if (!actionBarNodeId) return;
+            const book = getActiveBook();
+            if (actionBarNodeId === book?.startNodeId) {
+                showToast('Štartovaciu stranu nemožno zmazať z menu', 'warning');
+                return;
+            }
             selectedNodeId = actionBarNodeId;
             hideNodeActionBar();
             deleteCurrentNode();
@@ -2641,9 +3888,11 @@
             const markersLayer = document.getElementById('svg-custom-markers');
             if (!edgesLayer || !nodesLayer) return;
 
+            ensureTerrainPatterns();
             edgesLayer.innerHTML = '';
             nodesLayer.innerHTML = '';
             markersLayer.innerHTML = '';
+            document.querySelectorAll('#map-svg defs [id^="nclip_"], #map-svg defs [id^="nmask_"]').forEach(el => el.remove());
 
             const visibleNodeIds = getVisibleNodeIds(book);
             const hasPathHighlight = highlightState.nodes.size > 0 || highlightState.nodesB.size > 0;
@@ -2798,8 +4047,9 @@
                 const tagIcon = EDGE_TAGS[edge.tag || '']?.icon || '';
                 const dirBadge = edge.direction ? `[${COMPASS_DIR_META[edge.direction]?.label[0]}] ` : '';
                 const fullLabel = (tagIcon ? tagIcon + ' ' : '') + (dirBadge + (edge.note || '')).trim();
+                const mapDisp = getMapDisplay();
                 // Pri silnom oddialení len ikona/smer; plný text pri normálnom zoome
-                if (fullLabel.trim() && (showDenseLabels || tagIcon || edge.direction)) {
+                if (mapDisp.labels && fullLabel.trim() && (showDenseLabels || tagIcon || edge.direction)) {
                     const display = fullLabel.trim();
                     const shortText = showDenseLabels
                         ? (display.length > 16 ? display.slice(0, 14) + '…' : display)
@@ -2876,20 +4126,36 @@
                 g.dataset.nodeId = node.id;
                 if (hasPathHighlight && !isHighlighted) g.style.opacity = '0.32';
 
-                let stroke = node.color || 'var(--node-stroke)';
+                const mapDisp = getMapDisplay();
+                const useCustomColors = mapDisp.customColors;
+                let stroke = (useCustomColors && node.color) ? node.color : 'var(--node-stroke)';
                 let fill = 'var(--node-bg)';
                 let numFill = 'var(--node-text)';
                 let topSymbol = node.icon || '';
 
                 if (terminalCfg) {
-                    // Koncový uzol (Víťazstvo / Koniec deja / Smrť): plná výplň kruhu a vynútený symbol akcie
-                    fill = node.color || terminalCfg.fill;
+                    // Koncový uzol: plná farba stavu + veľká ikona vnútri (bez terénu)
+                    fill = (useCustomColors && node.color) ? node.color : terminalCfg.fill;
                     stroke = terminalCfg.stroke;
                     numFill = '#ffffff';
                     topSymbol = terminalCfg.icon;
                 } else if (node.status === 'item') {
-                    stroke = node.color || '#0ea5e9';
+                    if (useCustomColors) stroke = node.color || '#0ea5e9';
                     if (!topSymbol) topSymbol = '🔑';
+                }
+
+                // Terén: len ak nie je terminal a zapnuté výplne
+                const fillMode = getNodeFillMode();
+                let photoUrl = null;
+                if (!terminalCfg && mapDisp.fills && node.terrain && fillMode === 'pattern') {
+                    const patternFill = terrainFillForNode(node, null);
+                    if (patternFill) {
+                        fill = patternFill;
+                        numFill = '#f8fafc';
+                    }
+                } else if (!terminalCfg && mapDisp.fills && node.terrain && fillMode === 'image') {
+                    photoUrl = terrainImageUrlForNode(node);
+                    if (photoUrl) numFill = '#f8fafc';
                 }
 
                 if (isHighlighted) stroke = '#f59e0b';
@@ -2917,14 +4183,32 @@
                     });
                 }
 
-                // Hlavný tvar uzla (pri koncových uzloch je plne farebne vyplnený)
-                appendNodeShapeEl(g, shape, radius, {
-                    fill,
-                    stroke,
-                    strokeWidth: isStart || terminalCfg ? 3.5 : 2.5,
-                    dashed: isGhost || isDisconnected,
-                    fillOpacity: isGhost ? 0.6 : null
-                });
+                if (photoUrl) {
+                    const meta = window.KartografTerrains?.byId?.(node.terrain);
+                    appendNodeShapeEl(g, shape, radius, {
+                        fill: meta?.swatch || 'var(--node-bg)',
+                        stroke: 'none',
+                        strokeWidth: 0,
+                        dashed: false,
+                        fillOpacity: isGhost ? 0.5 : 1
+                    });
+                    appendNodeTerrainPhoto(g, node.id, shape, radius, photoUrl);
+                    if (isGhost && g.lastChild) g.lastChild.setAttribute('opacity', '0.55');
+                    appendNodeShapeEl(g, shape, radius, {
+                        fill: 'none',
+                        stroke,
+                        strokeWidth: isStart ? 3.5 : 2.5,
+                        dashed: isGhost || isDisconnected
+                    });
+                } else {
+                    appendNodeShapeEl(g, shape, radius, {
+                        fill,
+                        stroke,
+                        strokeWidth: isStart || terminalCfg ? 3.5 : 2.5,
+                        dashed: isGhost || isDisconnected,
+                        fillOpacity: isGhost ? 0.6 : null
+                    });
+                }
 
                 // Vnútorný dvojitý prstenec pre uzavretý koniec deja
                 if (terminalCfg) {
@@ -2936,23 +4220,45 @@
                     });
                 }
 
-                const numText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                numText.setAttribute('y', '4.5');
-                numText.setAttribute('text-anchor', 'middle');
-                numText.setAttribute('font-size', node.id.length > 3 ? '11' : '13');
-                numText.setAttribute('font-weight', '800');
-                numText.setAttribute('fill', numFill);
-                if (isGhost) numText.setAttribute('opacity', '0.65');
-                numText.textContent = node.id;
-                g.appendChild(numText);
+                const strongNumber = !!(photoUrl || (mapDisp.fills && node.terrain && fillMode === 'pattern') || terminalCfg);
 
-                if (topSymbol) {
-                    const sym = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    sym.setAttribute('y', -radius - 6);
-                    sym.setAttribute('text-anchor', 'middle');
-                    sym.setAttribute('font-size', '14');
-                    sym.textContent = topSymbol;
-                    g.appendChild(sym);
+                if (terminalCfg) {
+                    // Veľká ikona v strede (pohár / smrtka / vlajka)
+                    const big = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    big.setAttribute('y', mapDisp.numbers ? '1' : '6');
+                    big.setAttribute('text-anchor', 'middle');
+                    big.setAttribute('font-size', mapDisp.numbers ? '20' : '26');
+                    big.setAttribute('dominant-baseline', 'middle');
+                    big.textContent = terminalCfg.icon;
+                    g.appendChild(big);
+                    if (mapDisp.numbers) {
+                        appendReadableNodeNumber(g, {
+                            y: 16,
+                            fontSize: 10,
+                            text: node.id,
+                            strongFill: true
+                        });
+                    }
+                } else {
+                    if (mapDisp.numbers) {
+                        appendReadableNodeNumber(g, {
+                            y: 4.5,
+                            fontSize: node.id.length > 3 ? 11 : 13,
+                            text: node.id,
+                            fill: numFill,
+                            ghost: isGhost,
+                            strongFill: strongNumber
+                        });
+                    }
+
+                    if (mapDisp.icons && topSymbol) {
+                        const sym = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        sym.setAttribute('y', -radius - 6);
+                        sym.setAttribute('text-anchor', 'middle');
+                        sym.setAttribute('font-size', '14');
+                        sym.textContent = topSymbol;
+                        g.appendChild(sym);
+                    }
                 }
 
                 // Poznámky pod uzlami len pri „Tu som“ / výbere / priblížení — inak sa bijú s popiskami volieb
@@ -4305,24 +5611,18 @@
                 btn.classList.toggle('app-accent-btn', btn.dataset.status === node.status);
             });
 
-            // Paleta 27 symbolov – pri koncovom uzle je uzamknutá, aby zachovala symbol akcie
             document.getElementById('nd-icon-lock-hint').classList.toggle('hidden', !isLockedTerminal);
-            const iconBox = document.getElementById('nd-icon-palette');
-            iconBox.innerHTML = OBJECT_ICONS.map(ic => {
-                const isSelected = node.icon === ic;
-                if (isLockedTerminal) {
-                    return `
-                        <button type="button" disabled class="py-1.5 rounded-xl border text-base flex items-center justify-center opacity-35 cursor-not-allowed app-card">
-                            ${ic || '<span class="text-[10px]">Bez</span>'}
-                        </button>
-                    `;
-                }
-                return `
-                    <button type="button" onclick="setNodeIcon('${ic}')" class="py-1.5 rounded-xl border text-base flex items-center justify-center ${isSelected ? 'app-accent-btn' : 'app-card'}">
-                        ${ic || '<span class="text-[10px] opacity-60">Bez</span>'}
-                    </button>
-                `;
-            }).join('');
+            const iconBlock = document.getElementById('nd-icon-palette')?.parentElement;
+            if (iconBlock) iconBlock.classList.toggle('hidden', isLockedTerminal);
+            document.querySelector('label.fill-terrain-ui')?.classList.toggle('hidden', isLockedTerminal);
+            document.getElementById('nd-terrain-palette')?.classList.toggle('hidden', isLockedTerminal);
+            document.getElementById('nd-terrain-label')?.classList.toggle('hidden', isLockedTerminal);
+
+            if (!isLockedTerminal) {
+                let iconIdx = OBJECT_ICONS.indexOf(node.icon || '');
+                if (iconIdx < 0) iconIdx = 0;
+                renderIconRibbon(iconIdx);
+            }
 
             const colorBox = document.getElementById('nd-color-palette');
             colorBox.innerHTML = NODE_COLORS.map(c => `
@@ -4336,6 +5636,14 @@
                     ${s.label}
                 </button>
             `).join('');
+
+            if (!isLockedTerminal) {
+                const terrains = getTerrainChoices();
+                let terrIdx = terrains.findIndex(t => t.id === (node.terrain || ''));
+                if (terrIdx < 0) terrIdx = 0;
+                renderTerrainRibbon(terrIdx);
+            }
+            bindNodeBarCarouselGestures();
 
             const outEdges = book.edges.filter(e => e.from === node.id);
             document.getElementById('nd-edges-list').innerHTML = outEdges.length === 0
@@ -4359,9 +5667,10 @@
             pushHistory('Typ strany');
             node.status = status;
 
-            // Ak sa vyberie koniec deja (Víťazstvo / Koniec deja / Smrť), vynúti sa symbol danej akcie
+            // Koniec deja: pevný symbol, bez terénu/obrázka
             if (TERMINAL_STATUS_CONFIG[status]) {
                 node.icon = TERMINAL_STATUS_CONFIG[status].icon;
+                node.terrain = '';
             } else if (node.icon === '🏆' || node.icon === '🏁' || node.icon === '💀') {
                 node.icon = '';
             }
@@ -4400,6 +5709,22 @@
             if (!node) return;
             pushHistory('Tvar značky');
             node.shape = shapeId || 'circle';
+            node.updatedAt = Date.now();
+            saveAppData();
+            refreshAllUI();
+            openNodeDetailModal(selectedNodeId);
+        }
+
+        function setNodeTerrain(terrainId) {
+            const book = getActiveBook();
+            const node = book.nodes[selectedNodeId];
+            if (!node || TERMINAL_STATUS_CONFIG[node.status]) return;
+            pushHistory('Výplň miesta');
+            node.terrain = terrainId || '';
+            const suggested = TERRAIN_SYMBOLS[terrainId];
+            if (suggested && !node.icon) {
+                node.icon = suggested;
+            }
             node.updatedAt = Date.now();
             saveAppData();
             refreshAllUI();
@@ -4890,22 +6215,286 @@
             showToast(`Prepnuté na ${book.runs[idx].name}`);
         }
 
-        // RPG Prievodka a kocky
-        function rollDice(type) {
-            let res = '';
-            if (type === '1k6') {
-                res = `🎲 1k6 = ${Math.floor(Math.random() * 6) + 1}`;
-            } else if (type === '2k6') {
-                const a = Math.floor(Math.random() * 6) + 1;
-                const b = Math.floor(Math.random() * 6) + 1;
-                res = `🎲 2k6 = ${a + b} (${a} + ${b})`;
-            } else {
-                res = `🔢 Náhoda (0–9) = ${Math.floor(Math.random() * 10)}`;
+        // RPG Prievodka a kocky — sada kociek je viazaná na knihu
+        const DEFAULT_DICE_KIT = [
+            { id: 'k6', label: 'k6', sides: 6, min: 1, count: 1 },
+            { id: '2k6', label: '2k6', sides: 6, min: 1, count: 2 },
+            { id: 'k20', label: 'k20', sides: 20, min: 1, count: 1 }
+        ];
+
+        function ensureBookDiceKit(book) {
+            if (!book) return DEFAULT_DICE_KIT.slice();
+            if (!book.rpg) book.rpg = { stats: [], inventory: [], diceKit: [] };
+            if (!Array.isArray(book.rpg.diceKit) || !book.rpg.diceKit.length) {
+                book.rpg.diceKit = DEFAULT_DICE_KIT.map(d => ({ ...d }));
             }
-            document.getElementById('dice-result-box').textContent = res;
+            return book.rpg.diceKit;
+        }
+
+        function parseDiceExpr(raw) {
+            const s = String(raw || '').trim().toLowerCase().replace(/\s+/g, '');
+            if (!s) return null;
+            if (s === '0-9' || s === '0–9') return { id: '0-9', label: '0–9', sides: 10, min: 0, count: 1 };
+            if (s === '2k10%' || s === '2×k10%' || s === 'percentile') {
+                return { id: '2k10', label: '2×k10 %', sides: 10, min: 0, count: 1, percentile: true };
+            }
+            let m = s.match(/^(\d+)[xk×](\d+)$/i) || s.match(/^(\d*)k(\d+)$/i);
+            if (!m) {
+                const n = Number(s);
+                if (Number.isFinite(n) && n >= 2 && n <= 1000) {
+                    return { id: 'k' + n, label: 'k' + n, sides: Math.floor(n), min: 1, count: 1 };
+                }
+                return null;
+            }
+            const count = Math.max(1, Math.min(12, Number(m[1] || 1)));
+            const sides = Math.floor(Number(m[2]));
+            if (!Number.isFinite(sides) || sides < 2 || sides > 1000) return null;
+            const label = count === 1 ? `k${sides}` : `${count}k${sides}`;
+            return { id: label, label, sides, min: 1, count };
+        }
+
+        function resolveDiceSpec(typeId) {
+            const book = getActiveBook();
+            const kit = ensureBookDiceKit(book);
+            const fromKit = kit.find(d => d.id === typeId);
+            if (fromKit) {
+                return {
+                    id: fromKit.id,
+                    label: fromKit.label,
+                    sides: fromKit.sides,
+                    min: fromKit.min == null ? 1 : fromKit.min,
+                    count: fromKit.count || 1,
+                    percentile: !!fromKit.percentile
+                };
+            }
+            const preset = DICE_PRESETS.find(d => d.id === typeId);
+            if (preset) return { ...preset, count: appSettings.diceCount || 1 };
+            const parsed = parseDiceExpr(typeId);
+            if (parsed) return parsed;
+            return { id: 'k6', label: 'k6', sides: 6, min: 1, count: 1 };
+        }
+
+        function rollOneDie(sides, min) {
+            const lo = min == null ? 1 : min;
+            if (lo === 0) return Math.floor(Math.random() * sides);
+            return Math.floor(Math.random() * sides) + lo;
+        }
+
+        function dieCssClass(sides) {
+            if (sides <= 4) return 'd4';
+            if (sides <= 6) return '';
+            if (sides <= 8) return 'd8';
+            if (sides <= 10) return 'd10';
+            if (sides <= 12) return 'd12';
+            return 'd20';
+        }
+
+        function renderDiceControls() {
+            const book = getActiveBook();
+            const kit = ensureBookDiceKit(book);
+            const selected = appSettings.diceType || kit[0]?.id || 'k6';
+            const row = document.getElementById('dice-type-row');
+            if (row) {
+                row.innerHTML = kit.map(d => `
+                    <button type="button" onclick="selectDiceType('${d.id}')" class="px-2.5 py-1.5 rounded-xl border font-bold shrink-0 ${selected === d.id ? 'app-accent-btn' : 'app-card'}">${escapeHtml(d.label)}</button>
+                `).join('') || '<span class="opacity-50 text-[11px]">Prázdna sada</span>';
+            }
+            const countLabel = document.getElementById('dice-count-label');
+            if (countLabel) countLabel.textContent = String(appSettings.diceCount || 1);
+            const compassCount = document.getElementById('compass-dice-count');
+            if (compassCount) compassCount.textContent = String(appSettings.diceCount || 1);
+
+            const kitList = document.getElementById('book-dice-kit-list');
+            if (kitList) {
+                kitList.innerHTML = kit.map(d => `
+                    <span class="px-2 py-1 rounded-lg app-surface border flex items-center gap-1.5">
+                        <button type="button" onclick="selectDiceType('${d.id}')" class="font-bold">${escapeHtml(d.label)}</button>
+                        <button type="button" onclick="removeDiceFromBookKit('${d.id}')" class="text-rose-400 font-bold" title="Odstrániť zo sady">×</button>
+                    </span>
+                `).join('') || '<span class="opacity-50 text-[11px]">Sada je prázdna — pridaj kocku</span>';
+            }
+
+            const presetRow = document.getElementById('dice-preset-add-row');
+            if (presetRow) {
+                presetRow.innerHTML = DICE_PRESETS.map(d => `
+                    <button type="button" onclick="addPresetToBookKit('${d.id}')" class="px-2 py-1 rounded-lg app-card border text-[10px] font-bold">${d.label}</button>
+                `).join('');
+            }
+
+            const compassKit = document.getElementById('compass-dice-kit');
+            if (compassKit) {
+                compassKit.innerHTML = kit.map(d => `
+                    <button type="button" onclick="throwKitDice('${d.id}')" class="px-2 py-1.5 rounded-xl border font-bold shrink-0 ${selected === d.id ? 'app-accent-btn' : 'app-card'}">${escapeHtml(d.label)}</button>
+                `).join('');
+            }
+        }
+
+        function selectDiceType(typeId) {
+            const spec = resolveDiceSpec(typeId);
+            appSettings.diceType = spec.id;
+            if (spec.count) appSettings.diceCount = spec.count;
+            saveAppSettings();
+            renderDiceControls();
+        }
+
+        function changeDiceCount(delta) {
+            appSettings.diceCount = Math.max(1, Math.min(12, (appSettings.diceCount || 1) + delta));
+            saveAppSettings();
+            renderDiceControls();
+        }
+
+        function addDiceToBookKit() {
+            const expr = document.getElementById('kit-dice-expr')?.value || '';
+            const parsed = parseDiceExpr(expr);
+            if (!parsed) {
+                showToast('Zadaj napr. 1k6, 2k20 alebo k8', 'warning');
+                return;
+            }
+            const book = getActiveBook();
+            const kit = ensureBookDiceKit(book);
+            if (kit.some(d => d.id === parsed.id)) {
+                showToast('Táto kocka už je v sade');
+                return;
+            }
+            kit.push(parsed);
+            appSettings.diceType = parsed.id;
+            appSettings.diceCount = parsed.count || 1;
+            saveAppData();
+            saveAppSettings();
+            if (document.getElementById('kit-dice-expr')) document.getElementById('kit-dice-expr').value = '';
+            renderDiceControls();
+            showToast(`Do sady: ${parsed.label}`);
+        }
+
+        function addPresetToBookKit(presetId) {
+            const preset = DICE_PRESETS.find(d => d.id === presetId);
+            if (!preset) return;
+            const book = getActiveBook();
+            const kit = ensureBookDiceKit(book);
+            if (kit.some(d => d.id === preset.id)) {
+                selectDiceType(preset.id);
+                showToast('Už je v sade');
+                return;
+            }
+            kit.push({
+                id: preset.id,
+                label: preset.label,
+                sides: preset.sides,
+                min: preset.min == null ? 1 : preset.min,
+                count: 1,
+                percentile: !!preset.percentile
+            });
+            appSettings.diceType = preset.id;
+            saveAppData();
+            saveAppSettings();
+            renderDiceControls();
+            showToast(`Do sady: ${preset.label}`);
+        }
+
+        function removeDiceFromBookKit(id) {
+            const book = getActiveBook();
+            const kit = ensureBookDiceKit(book);
+            book.rpg.diceKit = kit.filter(d => d.id !== id);
+            if (!book.rpg.diceKit.length) book.rpg.diceKit = DEFAULT_DICE_KIT.map(d => ({ ...d }));
+            if (appSettings.diceType === id) appSettings.diceType = book.rpg.diceKit[0].id;
+            saveAppData();
+            saveAppSettings();
+            renderDiceControls();
+        }
+
+        function throwKitDice(typeId) {
+            const spec = resolveDiceSpec(typeId);
+            appSettings.diceType = spec.id;
+            // pri ťuku na sadu: použi počet zo sady, ak je >1, inak aktuálny počet hodu
+            appSettings.diceCount = (spec.count && spec.count > 1) ? spec.count : (appSettings.diceCount || 1);
+            saveAppSettings();
+            renderDiceControls();
+            throwSelectedDice();
+        }
+
+        function quickThrowDice(typeId, count) {
+            appSettings.diceType = typeId;
+            appSettings.diceCount = count || 1;
+            saveAppSettings();
+            renderDiceControls();
+            throwSelectedDice();
+        }
+
+        function throwSelectedDice() {
+            const spec = resolveDiceSpec(appSettings.diceType || 'k6');
+            const count = Math.max(1, Math.min(12, appSettings.diceCount || spec.count || 1));
+            const rolls = [];
+
+            if (spec.percentile) {
+                for (let i = 0; i < count; i++) {
+                    const tens = Math.floor(Math.random() * 10) * 10;
+                    const ones = Math.floor(Math.random() * 10);
+                    let val = tens + ones;
+                    if (val === 0) val = 100;
+                    rolls.push({ faces: [tens === 0 ? '00' : String(tens), String(ones)], value: val, sides: 10 });
+                }
+            } else {
+                for (let i = 0; i < count; i++) {
+                    const v = rollOneDie(spec.sides, spec.min);
+                    rolls.push({ faces: [String(v)], value: v, sides: spec.sides });
+                }
+            }
+
+            const sum = rolls.reduce((a, r) => a + r.value, 0);
+            const detail = rolls.map(r => r.faces.join('+')).join(', ');
+            const label = count === 1 ? spec.label : `${count}× ${spec.label.replace(/^\d+k/, 'k')}`;
+            const res = rolls.length === 1
+                ? `🎲 ${spec.label} = ${rolls[0].value}`
+                : `🎲 ${label} = ${sum} (${detail})`;
+
+            lastDiceResultText = res;
+            const box = document.getElementById('dice-result-box');
+            if (box) box.textContent = res;
+            const compass = document.getElementById('compass-dice-result');
+            if (compass) compass.textContent = rolls.length === 1 ? String(rolls[0].value) : String(sum);
+
+            showDiceTableAnimation(label, rolls, sum);
+        }
+
+        function showDiceTableAnimation(title, rolls, sum) {
+            const overlay = document.getElementById('dice-table-overlay');
+            const felt = document.getElementById('dice-table-felt');
+            const sumEl = document.getElementById('dice-table-sum');
+            const titleEl = document.getElementById('dice-table-title');
+            if (!overlay || !felt) return;
+            if (titleEl) titleEl.textContent = title;
+            felt.innerHTML = '';
+            rolls.forEach((r, idx) => {
+                r.faces.forEach((face, fIdx) => {
+                    const die = document.createElement('div');
+                    die.className = 'thrown-die ' + dieCssClass(r.sides);
+                    die.textContent = face;
+                    die.style.animationDelay = `${(idx * 0.08) + (fIdx * 0.05)}s`;
+                    felt.appendChild(die);
+                });
+            });
+            if (sumEl) {
+                sumEl.textContent = rolls.length > 1 ? `Súčet: ${sum}` : `Výsledok: ${sum}`;
+            }
+            overlay.classList.add('visible');
+            clearTimeout(showDiceTableAnimation._t);
+            showDiceTableAnimation._t = setTimeout(() => closeDiceTable(), 3200);
+        }
+
+        function closeDiceTable() {
+            document.getElementById('dice-table-overlay')?.classList.remove('visible');
+        }
+
+        // spätná kompatibilita pre staré volania
+        function rollDice(type) {
+            if (type === '1k6') quickThrowDice('k6', 1);
+            else if (type === '2k6') quickThrowDice('k6', 2);
+            else if (type === '0-9') quickThrowDice('0-9', 1);
+            else quickThrowDice(type, appSettings.diceCount || 1);
         }
 
         function renderRpgSheet() {
+            renderDiceControls();
             const book = getActiveBook();
             const statsList = document.getElementById('rpg-stats-list');
             statsList.innerHTML = (book.rpg?.stats || []).map((st, idx) => `
@@ -5064,7 +6653,12 @@
                 activeRunIndex: 0,
                 rpg: {
                     stats: [{ name: 'Zručnosť', val: 10, max: 10 }, { name: 'Kondícia', val: 20, max: 20 }],
-                    inventory: []
+                    inventory: [],
+                    diceKit: [
+                        { id: 'k6', label: 'k6', sides: 6, min: 1, count: 1 },
+                        { id: '2k6', label: '2k6', sides: 6, min: 1, count: 2 },
+                        { id: 'k20', label: 'k20', sides: 20, min: 1, count: 1 }
+                    ]
                 }
             };
 
@@ -5646,26 +7240,71 @@
             importAnyKartografJSON(event);
         }
 
-        function buildPrintAtlasSvg(book) {
-            const nodes = Object.values(book.nodes);
-            if (!nodes.length) {
-                const empty = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                empty.setAttribute('viewBox', '0 0 400 120');
-                empty.innerHTML = '<text x="200" y="64" text-anchor="middle" fill="#666" font-size="14">Mapa je prázdna</text>';
-                return empty;
-            }
+        function computePrintMapPages(book) {
+            const nodes = Object.values(book.nodes || {});
+            if (!nodes.length) return [];
 
+            const pad = 40;
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             nodes.forEach(n => {
-                minX = Math.min(minX, n.x - 40);
-                minY = Math.min(minY, n.y - 40);
-                maxX = Math.max(maxX, n.x + 40);
-                maxY = Math.max(maxY, n.y + 40);
+                minX = Math.min(minX, n.x);
+                minY = Math.min(minY, n.y);
+                maxX = Math.max(maxX, n.x);
+                maxY = Math.max(maxY, n.y);
             });
-            const pad = 36;
             minX -= pad; minY -= pad; maxX += pad; maxY += pad;
-            const w = Math.max(320, maxX - minX);
-            const h = Math.max(240, maxY - minY);
+            const totalW = Math.max(320, maxX - minX);
+            const totalH = Math.max(240, maxY - minY);
+
+            // Cieľ: uzly ostanú čitateľné (~nie menšie než ~8 mm na A4 šírke)
+            const MAX_PAGE_W = 980;
+            const MAX_PAGE_H = 1180;
+
+            if (totalW <= MAX_PAGE_W && totalH <= MAX_PAGE_H) {
+                return [{ nodes, minX, minY, maxX: minX + totalW, maxY: minY + totalH }];
+            }
+
+            const cols = Math.max(1, Math.ceil(totalW / MAX_PAGE_W));
+            const rows = Math.max(1, Math.ceil(totalH / MAX_PAGE_H));
+            const cellW = totalW / cols;
+            const cellH = totalH / rows;
+            const pages = [];
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x0 = minX + c * cellW;
+                    const x1 = minX + (c + 1) * cellW;
+                    const y0 = minY + r * cellH;
+                    const y1 = minY + (r + 1) * cellH;
+                    const pageNodes = nodes.filter(n => {
+                        const inX = n.x >= x0 && (c === cols - 1 ? n.x <= x1 + 0.01 : n.x < x1);
+                        const inY = n.y >= y0 && (r === rows - 1 ? n.y <= y1 + 0.01 : n.y < y1);
+                        return inX && inY;
+                    });
+                    if (!pageNodes.length) continue;
+
+                    // ViewBox podľa skutočných uzlov – nikdy nerezáme cez stred bubliny
+                    let pMinX = Infinity, pMinY = Infinity, pMaxX = -Infinity, pMaxY = -Infinity;
+                    pageNodes.forEach(n => {
+                        pMinX = Math.min(pMinX, n.x - pad);
+                        pMinY = Math.min(pMinY, n.y - pad);
+                        pMaxX = Math.max(pMaxX, n.x + pad);
+                        pMaxY = Math.max(pMaxY, n.y + pad);
+                    });
+                    pages.push({ nodes: pageNodes, minX: pMinX, minY: pMinY, maxX: pMaxX, maxY: pMaxY });
+                }
+            }
+            return pages.length ? pages : [{ nodes, minX, minY, maxX, maxY }];
+        }
+
+        function buildPrintAtlasSvgPage(book, page, pageIndex, pageCount) {
+            const nodes = page.nodes;
+            const minX = page.minX;
+            const minY = page.minY;
+            const w = Math.max(280, page.maxX - page.minX);
+            const h = Math.max(220, page.maxY - page.minY);
+            const markerId = `print-arrow-${pageIndex}`;
+            const nodeIds = new Set(nodes.map(n => n.id));
 
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -5675,9 +7314,10 @@
 
             const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
             defs.innerHTML = `
-                <marker id="print-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <marker id="${markerId}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#333"/>
                 </marker>`;
+            ensureTerrainPatterns(defs);
             svg.appendChild(defs);
 
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -5688,23 +7328,49 @@
             bg.setAttribute('fill', '#ffffff');
             svg.appendChild(bg);
 
+            if (pageCount > 1) {
+                const tag = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                tag.setAttribute('x', String(minX + 8));
+                tag.setAttribute('y', String(minY + 16));
+                tag.setAttribute('font-size', '11');
+                tag.setAttribute('font-weight', '700');
+                tag.setAttribute('fill', '#666');
+                tag.textContent = `Mapa ${pageIndex + 1}/${pageCount}`;
+                svg.appendChild(tag);
+            }
+
             book.edges.forEach(edge => {
                 const a = book.nodes[edge.from];
                 const b = book.nodes[edge.to];
                 if (!a || !b) return;
+                const aOn = nodeIds.has(edge.from);
+                const bOn = nodeIds.has(edge.to);
+                if (!aOn && !bOn) return;
+                // Ak ide spoj mimo stránku, stiahneme cieľ k okraju (bez urezania uzla)
+                let ax = a.x, ay = a.y, bx = b.x, by = b.y;
+                if (aOn && !bOn) {
+                    bx = Math.min(page.maxX - 8, Math.max(page.minX + 8, bx));
+                    by = Math.min(page.maxY - 8, Math.max(page.minY + 8, by));
+                } else if (!aOn && bOn) {
+                    ax = Math.min(page.maxX - 8, Math.max(page.minX + 8, ax));
+                    ay = Math.min(page.maxY - 8, Math.max(page.minY + 8, ay));
+                }
+
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                const midY = (a.y + b.y) / 2;
-                path.setAttribute('d', `M ${a.x} ${a.y} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y}`);
+                const midY = (ay + by) / 2;
+                path.setAttribute('d', `M ${ax} ${ay} C ${ax} ${midY}, ${bx} ${midY}, ${bx} ${by}`);
                 path.setAttribute('fill', 'none');
-                path.setAttribute('stroke', edge.color || '#444444');
-                path.setAttribute('stroke-width', '2');
-                path.setAttribute('marker-end', 'url(#print-arrow)');
+                const mapDispEdge = getMapDisplay();
+                path.setAttribute('stroke', (mapDispEdge.customColors && edge.color) ? edge.color : '#444444');
+                path.setAttribute('stroke-width', aOn && bOn ? '2' : '1.4');
+                if (!(aOn && bOn)) path.setAttribute('stroke-dasharray', '4 3');
+                path.setAttribute('marker-end', `url(#${markerId})`);
                 svg.appendChild(path);
 
-                if ((edge.note || '').trim()) {
+                if (mapDispEdge.labels && aOn && bOn && (edge.note || '').trim()) {
                     const t = 0.28;
-                    const lx = a.x + (b.x - a.x) * t;
-                    const ly = a.y + (b.y - a.y) * t;
+                    const lx = ax + (bx - ax) * t;
+                    const ly = ay + (by - ay) * t;
                     const short = edge.note.length > 18 ? edge.note.slice(0, 16) + '…' : edge.note;
                     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     label.setAttribute('x', String(lx));
@@ -5718,41 +7384,102 @@
                 }
             });
 
+            const fillMode = getNodeFillMode();
+            const mapDisp = getMapDisplay();
+            const radius = 22;
+
             nodes.forEach(node => {
                 const term = TERMINAL_STATUS_CONFIG[node.status];
-                const fill = term ? term.fill : '#ffffff';
-                const stroke = term ? term.stroke : (node.color || '#222222');
-                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', String(node.x));
-                circle.setAttribute('cy', String(node.y));
-                circle.setAttribute('r', '22');
-                circle.setAttribute('fill', fill);
-                circle.setAttribute('stroke', stroke);
-                circle.setAttribute('stroke-width', term ? '3' : '2.5');
-                if (node.status === 'ghost') circle.setAttribute('stroke-dasharray', '4 3');
-                svg.appendChild(circle);
+                const shape = node.shape || 'circle';
+                const useCustom = mapDisp.customColors;
+                const stroke = term
+                    ? term.stroke
+                    : ((useCustom && node.color) ? node.color : '#222222');
+                let fill = term ? ((useCustom && node.color) ? node.color : term.fill) : '#ffffff';
+                let photoUrl = null;
+                let numFill = term ? '#ffffff' : '#111111';
 
-                const num = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                num.setAttribute('x', String(node.x));
-                num.setAttribute('y', String(node.y + 5));
-                num.setAttribute('text-anchor', 'middle');
-                num.setAttribute('font-size', node.id.length > 3 ? '11' : '13');
-                num.setAttribute('font-weight', '800');
-                num.setAttribute('fill', term ? '#ffffff' : '#111111');
-                num.textContent = node.id;
-                svg.appendChild(num);
+                if (!term && mapDisp.fills && node.terrain) {
+                    if (fillMode === 'pattern') {
+                        fill = terrainFillForNode(node, fill);
+                        if (fill !== '#ffffff') numFill = '#f8fafc';
+                    } else if (fillMode === 'image') {
+                        photoUrl = terrainImageUrlForNode(node);
+                        const meta = window.KartografTerrains?.byId?.(node.terrain);
+                        fill = meta?.swatch || fill;
+                        if (photoUrl) numFill = '#f8fafc';
+                    }
+                }
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+
+                if (photoUrl) {
+                    appendNodeShapeEl(g, shape, radius, {
+                        fill,
+                        stroke: 'none',
+                        strokeWidth: 0
+                    });
+                    appendNodeTerrainPhoto(g, `p${pageIndex}_${node.id}`, shape, radius, photoUrl, defs);
+                    appendNodeShapeEl(g, shape, radius, {
+                        fill: 'none',
+                        stroke,
+                        strokeWidth: term ? 3 : 2.5,
+                        dashed: node.status === 'ghost'
+                    });
+                } else {
+                    appendNodeShapeEl(g, shape, radius, {
+                        fill,
+                        stroke,
+                        strokeWidth: term ? 3 : 2.5,
+                        dashed: node.status === 'ghost'
+                    });
+                }
+
+                const strongNumber = !!(photoUrl || (mapDisp.fills && node.terrain && fillMode === 'pattern') || term);
+                if (term) {
+                    const big = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    big.setAttribute('y', mapDisp.numbers ? '1' : '6');
+                    big.setAttribute('text-anchor', 'middle');
+                    big.setAttribute('font-size', mapDisp.numbers ? '18' : '24');
+                    big.setAttribute('dominant-baseline', 'middle');
+                    big.textContent = term.icon;
+                    g.appendChild(big);
+                    if (mapDisp.numbers) {
+                        appendReadableNodeNumber(g, { y: 15, fontSize: 10, text: node.id, strongFill: true });
+                    }
+                } else {
+                    if (mapDisp.numbers) {
+                        appendReadableNodeNumber(g, {
+                            y: 5,
+                            fontSize: node.id.length > 3 ? 11 : 13,
+                            text: node.id,
+                            fill: numFill,
+                            strongFill: strongNumber
+                        });
+                    }
+                    if (mapDisp.icons && node.icon) {
+                        const sym = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        sym.setAttribute('y', String(-radius - 4));
+                        sym.setAttribute('text-anchor', 'middle');
+                        sym.setAttribute('font-size', '14');
+                        sym.textContent = node.icon;
+                        g.appendChild(sym);
+                    }
+                }
 
                 if ((node.note || '').trim()) {
                     const short = node.note.length > 22 ? node.note.slice(0, 20) + '…' : node.note;
                     const note = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    note.setAttribute('x', String(node.x));
-                    note.setAttribute('y', String(node.y + 36));
+                    note.setAttribute('y', String(radius + 14));
                     note.setAttribute('text-anchor', 'middle');
                     note.setAttribute('font-size', '9');
                     note.setAttribute('fill', '#333');
                     note.textContent = short;
-                    svg.appendChild(note);
+                    g.appendChild(note);
                 }
+
+                svg.appendChild(g);
             });
 
             return svg;
@@ -5763,33 +7490,37 @@
             if (!book) return;
             closeModalById('transfer-modal');
 
-            // Tlač potrebuje Atlas so všetkými uzlami (nie filter hustoty)
             const prevFilter = graphFilterMode;
             graphFilterMode = 'all';
             if (currentViewMode === 'tree' || currentViewMode === 'web') renderGraph();
 
             const endings = countDiscoveredEndings(book);
+            const pages = computePrintMapPages(book);
             document.getElementById('print-atlas-title').textContent = book.title;
             document.getElementById('print-atlas-meta').textContent =
-                `Objavených strán: ${Object.keys(book.nodes).length} • Konce: ${endings.all.length} / ${book.totalTargetEndings || '?'} • Dátum tlače: ${formatTodayDate()}`;
+                `Objavených strán: ${Object.keys(book.nodes).length} • Konce: ${endings.all.length} / ${book.totalTargetEndings || '?'} • Mapa: ${Math.max(1, pages.length)} list(ov) • Dátum: ${formatTodayDate()}`;
 
             const mount = document.getElementById('print-svg-mount');
             mount.innerHTML = '';
-            mount.appendChild(buildPrintAtlasSvg(book));
+            if (!pages.length) {
+                const empty = document.createElement('div');
+                empty.textContent = 'Mapa je prázdna';
+                mount.appendChild(empty);
+            } else {
+                pages.forEach((page, idx) => {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'print-map-page border border-gray-300 rounded-xl p-2 bg-white';
+                    wrap.appendChild(buildPrintAtlasSvgPage(book, page, idx, pages.length));
+                    mount.appendChild(wrap);
+                });
+            }
 
-            const sortedNodes = Object.values(book.nodes).sort((a, b) => comparePageIds(a.id, b.id));
-            document.getElementById('print-index-list').innerHTML = sortedNodes.map(n => {
-                const outs = book.edges
-                    .filter(e => e.from === n.id)
-                    .map(e => `${e.to}${e.note ? ` (${escapeHtml(e.note)})` : ''}`)
-                    .join(', ');
-                return `
-                    <div class="border border-gray-300 rounded p-2">
-                        <strong>Strana ${n.id}</strong> ${outs ? `→ ${outs}` : ''}
-                        ${n.note ? `<div class="text-gray-700 mt-0.5">${escapeHtml(n.note)}</div>` : ''}
-                    </div>
-                `;
-            }).join('');
+            document.getElementById('print-index-list').innerHTML = buildTransitionsSummaryHtml(book)
+                .replace(/app-card border/g, 'border border-gray-300')
+                .replace(/opacity-75/g, 'text-gray-700')
+                .replace(/opacity-90/g, '')
+                .replace(/opacity-45 italic/g, 'text-gray-500 italic')
+                .replace(/opacity-70/g, 'text-gray-600');
 
             const restore = () => {
                 graphFilterMode = prevFilter;
@@ -5799,7 +7530,7 @@
             };
             window.addEventListener('afterprint', restore);
 
-            setTimeout(() => window.print(), 120);
+            setTimeout(() => window.print(), 160);
         }
 
         async function shareLibraryBackup() {
@@ -5861,7 +7592,8 @@
             document.getElementById('header-book-title').textContent = book.title;
             document.getElementById('header-progress-text').textContent = `${nodeCount} strán • Konce: ${endingsCount}/${targetEndings}`;
             document.getElementById('header-run-badge').textContent = book.runs[book.activeRunIndex]?.name || 'Pokus #1';
-            document.getElementById('header-rpg-btn').classList.toggle('hidden', book.profile !== 'rpg');
+            document.getElementById('header-rpg-btn')?.classList.toggle('hidden', book.profile !== 'rpg');
+            document.getElementById('header-rpg-btn-mobile')?.classList.toggle('hidden', book.profile !== 'rpg');
 
             document.getElementById('hud-current-page').textContent = book.currentNodeId || selectedNodeId;
             document.getElementById('footer-active-id').textContent = selectedNodeId;

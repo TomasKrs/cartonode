@@ -34,5 +34,9 @@ Ručná farba voľby (`edge.color`) sa zobrazí na mape aj ako ľavý farebný p
 
 ## Súbory
 
-- `gamebook_kartograf_v1_7.html` — celá aplikácia
+- `gamebook_kartograf_v1_7.html` — hlavná aplikácia
+- `assets/terrains.js` — vzory + logika výplní (cesty k ikonám rieši relatívne k sebe)
+- `assets/terrain-icons/*.jpg` — obrázkové výplne (načítajú sa lokálne / z Pages; SVG icon je záloha)
 - `index.html` — vstupný bod pre GitHub Pages (presmerovanie)
+
+Drž pohromade: HTML + `assets/`. Obrázky sa berú z `assets/terrain-icons/` podľa umiestnenia appky (nie z hardcode GitHub URL). V témach: **Len symbolické vzory** / **Len obrázky**.
