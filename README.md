@@ -23,10 +23,9 @@ Tlačidlo **Všetko / Fokus / Trasa / Nové** cykluje hustotu mapy. Metlička op
 
 | Pohľad | Účel |
 |--------|------|
-| **Atlas** | Hierarchický prehľad celej mapy |
-| **Sieť** | Silový layout (pavučina) |
+| **Mapa** | Uzly a spojnice; tlačidlá Usporiadať (strom) / Rozprestrieť (sieť) |
 | **Karty** | Reading loop — čítanie jednou rukou (mobile) |
-| **Mapa sveta** | Ilustrácia so špendlíkmi |
+| **Svet** | Ilustrácia so špendlíkmi |
 
 ## Farby hrán
 
