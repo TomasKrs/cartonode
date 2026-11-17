@@ -1,5 +1,5 @@
 /**
- * Gamebook Kartograf – terény
+ * Cartonode – terény
  * mode=pattern → len SVG vzory | mode=image → len obrázky (JPG / SVG ikona)
  */
 (function (global) {
@@ -200,7 +200,7 @@
      * Režim „obrázky“ = VÝHRADNE tieto súbory (žiadne SVG miešanie).
      * Poradie hľadania: GitHub Pages → offline pri HTML → offline pri terrains.js
      */
-    var GITHUB_ICONS_BASE = 'https://tomaskrs.github.io/kartograf/assets/terrain-icons/';
+    var GITHUB_ICONS_BASE = 'https://tomaskrs.github.io/cartonode/assets/terrain-icons/';
     /** bust po úprave JPG (biele okraje) */
     var RASTER_CACHE_VER = 'v20261117f';
     var JPG_IDS = [

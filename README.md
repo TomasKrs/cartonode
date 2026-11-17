@@ -1,13 +1,13 @@
-# Gamebook Kartograf
+# Cartonode
 
-Jednosúborová webová appka na mapovanie kníh typu *Choose Your Own Adventure* (gamebooky): atlas stromu, silová sieť, reading loop (Karty) a mapa sveta.
+Webová appka na mapovanie kníh typu *Choose Your Own Adventure* (gamebooky): atlas stromu, silová sieť, reading loop (Karty) a mapa sveta.
 
 ## Spustenie
 
-- **Lokálne:** otvor `gamebook_kartograf_v1_7.html` v prehliadači (Chrome / Edge / Firefox / Safari).
-- **Online (GitHub Pages):** po zapnutí Pages otvor koreň repozitára — `index.html` ťa presmeruje na appku.
+- **Lokálne:** otvor `index.html` v prehliadači (Chrome / Edge / Firefox / Safari).
+- **Online:** [tomaskrs.github.io/cartonode](https://tomaskrs.github.io/cartonode)
 
-Funguje na PC, Mac, Linux, iOS aj Android (prehliadač). Netreba inštaláciu.
+Funguje na PC, Mac, Linux, iOS aj Android. Netreba inštaláciu.
 
 ## Dáta
 
@@ -34,9 +34,8 @@ Ručná farba voľby (`edge.color`) sa zobrazí na mape aj ako ľavý farebný p
 
 ## Súbory
 
-- `gamebook_kartograf_v1_7.html` — hlavná aplikácia
-- `assets/terrains.js` — vzory + logika výplní (cesty k ikonám rieši relatívne k sebe)
-- `assets/terrain-icons/*.jpg` — obrázkové výplne (načítajú sa lokálne / z Pages; SVG icon je záloha)
-- `index.html` — vstupný bod pre GitHub Pages (presmerovanie)
+- `index.html` — aplikácia
+- `assets/terrains.js` — vzory + logika výplní
+- `assets/terrain-icons/*.jpg` — obrázkové výplne
 
-Drž pohromade: HTML + `assets/`. Obrázky sa berú z `assets/terrain-icons/` podľa umiestnenia appky (nie z hardcode GitHub URL). V témach: **Len symbolické vzory** / **Len obrázky**.
+Drž pohromade: HTML + `assets/`. V témach: **Len symbolické vzory** / **Len obrázky**.
